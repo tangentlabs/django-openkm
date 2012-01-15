@@ -23,5 +23,7 @@ Useful links:
 -------------
 
 http://www.openkm.com/
+
 http://wiki.openkm.com/index.php/Webservices_Guide
+
 http://lucene.apache.org/java/docs/index.html
