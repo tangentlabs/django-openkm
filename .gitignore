@@ -1,0 +1,9 @@
+*.pyc
+models.py
+sync.py
+tests.py
+views.py
+
+fixtures
+management
+migrations
