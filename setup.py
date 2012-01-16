@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 from django-openkm import get_version
 
 
-setup(name='django-openkm',
+setup(name='django_openkm',
       version=get_version().replace(' ', '-'),
       url='https://github.com/igniteflow/django-openkm',
       author="Phil Tysoe",
