@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from django_openkm.sync import SyncFolderList
+from django_openkm.utils import logger
 
 class DummyDocument:
     path = ''
