@@ -19,6 +19,9 @@ Add the following to your settings::
     }
 
 
+Developed and maintained by Phil Tysoe at .. _`Tangent Labs`: http://tangentlabs.co.uk/
+
+
 Useful links:
 -------------
 
