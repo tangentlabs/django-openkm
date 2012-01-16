@@ -1,4 +1,5 @@
 import base64
+import logging
 
 import suds
 
@@ -45,20 +46,7 @@ def find_key(dic, val):
     """return the key of dictionary dic given the value"""
     return [k for k, v in dic.iteritems() if v == val][0]
 
-import logging
-import sys
-
-from django.conf import settings
-
 logger = logging.getLogger('tce')
 logger.setLevel(logging.DEBUG)
-
-handler = logging.FileHandler(settings.PROJECT_LOG)
-handler.setLevel(logging.DEBUG)
-
 formatter = logging.Formatter('%(levelname)-8s %(message)s')
-
-handler.setFormatter(formatter)
-
-logger.addHandler(handler)
 
