@@ -2,14 +2,12 @@ from django.conf import settings
 
 from suds.client import Client
 
-from .utils import logger
-
 if settings.DEBUG:
     import logging
     logging.basicConfig(level=logging.INFO)
     logging.getLogger('suds.client').setLevel(logging.INFO)
 
-PATH = 'dm'
+PATH = settings.OPENKM['Path']
 
 OPENKM_WSDLS = {
     'Auth': settings.OPENKM['Host'] + '%s/OKMAuth?wsdl' % PATH,
