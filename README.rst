@@ -13,7 +13,7 @@ INSTALLATION
 
 2. Add 'django_openkm' to your INSTALLED_APPS
 
-2. Add the following to your Django settings::
+3. Add the following to your Django settings::
 
     OPENKM = {
         'UploadRoot': '/okm:root/',
@@ -23,9 +23,9 @@ INSTALLATION
         'Path': 'OpenKM', 
     }
     
-3. Ensure your MEDIA_ROOT is set up with the correct permissions and working
+4. Ensure your MEDIA_ROOT is set up with the correct permissions and working
 
-4. Run syncdb and check your Django admin.  You will now be able to upload files through the admin interface.  
+5. Run syncdb and check your Django admin.  You will now be able to upload files through the admin interface.  
 (This will likely be removed later in favour of abstract models classes, but just as proof of concept)
 
 [For OpenKM installation see http://wiki.openkm.com/index.php/Quick_Install.  It's pretty straightforward to setup locally
