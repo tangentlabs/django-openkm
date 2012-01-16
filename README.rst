@@ -17,7 +17,8 @@ Add the following to your settings::
         'UploadRoot': '/okm:root/',
         'Host': 'http://localhost:8080/',
         'User': 'okmAdmin',
-        'Password': 'admin'
+        'Password': 'admin',
+        'Path': 'OpenKM', 
     }
     
 Ensure your MEDIA_ROOT is set up with the correct permissions and working
