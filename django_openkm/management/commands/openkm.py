@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from document_management.openkm.sync import SyncFolderList
+from django_openkm.sync import SyncFolderList
 
 class DummyDocument:
     path = ''
