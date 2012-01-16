@@ -1,0 +1,56 @@
+Metadata-Version: 1.0
+Name: django-openkm
+Version: 0.2-pre-alpha
+Summary: A client library for OpenKM document management system.  Integration with Django 1.2+
+Home-page: https://github.com/igniteflow/django-openkm
+Author: Phil Tysoe
+Author-email: philip.tysoe@tangentlabs.co.uk
+License: BSD
+Description: django-openkm
+        =============
+        
+        **WORK IN PROGRESS**
+        There are existing tests (500+ lines), models and views - however they need to be refactored to abstract them from their
+        current project.  So basically, the Django stuff will come later, but not much later.
+        
+        A Python/Django client library for interaction with the OpenKM web services API.
+        
+        OpenKM is an open-source, Java document management system with Lucene search built-in.
+        
+        **INSTALLATION**
+        
+        Add the following to your settings::
+        
+            OPENKM = {
+                'UploadRoot': '/okm:root/',
+                'Host': 'http://localhost:8080/',
+                'User': 'okmAdmin',
+                'Password': 'admin',
+                'Path': 'OpenKM', 
+            }
+            
+        Ensure your MEDIA_ROOT is set up with the correct permissions and working
+        
+        
+        Developed and maintained by Phil Tysoe at `Tangent Labs`_
+        
+        .. _`Tangent Labs`: http://tangentlabs.co.uk/
+        
+        
+        Useful links:
+        -------------
+        
+        http://www.openkm.com/
+        
+        http://wiki.openkm.com/index.php/Webservices_Guide
+        
+        http://lucene.apache.org/java/docs/index.html
+        
+Keywords: OpenKM,Django,document management
+Platform: linux
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: Unix
+Classifier: Programming Language :: Python

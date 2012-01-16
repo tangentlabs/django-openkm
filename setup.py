@@ -9,7 +9,7 @@ To release a new version to PyPi:
 
 from setuptools import setup, find_packages
 
-from django-openkm import get_version
+from django_openkm import get_version
 
 
 setup(name='django_openkm',

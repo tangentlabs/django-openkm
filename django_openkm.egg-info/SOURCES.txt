@@ -1,0 +1,17 @@
+setup.py
+django_openkm/__init__.py
+django_openkm/admin.py
+django_openkm/client.py
+django_openkm/facades.py
+django_openkm/models.py
+django_openkm/sync.py
+django_openkm/tests.py
+django_openkm/utils.py
+django_openkm.egg-info/PKG-INFO
+django_openkm.egg-info/SOURCES.txt
+django_openkm.egg-info/dependency_links.txt
+django_openkm.egg-info/requires.txt
+django_openkm.egg-info/top_level.txt
+django_openkm/management/__init__.py
+django_openkm/management/commands/__init__.py
+django_openkm/management/commands/openkm.py
