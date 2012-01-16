@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: django-openkm
-Version: 0.2-pre-alpha
+Version: 0.3-pre-alpha
 Summary: A client library for OpenKM document management system.  Integration with Django 1.2+
 Home-page: https://github.com/igniteflow/django-openkm
 Author: Phil Tysoe
