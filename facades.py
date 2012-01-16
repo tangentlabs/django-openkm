@@ -1,6 +1,19 @@
 from django.conf import settings
 
-from .client import Document, Folder, Repository, Property
+from .client import Auth, Document, Folder, Repository, Property
+from .utils import make_file_java_byte_array_compatible
+
+class Session(object):
+
+    def __init__(self):
+        self.auth = Auth()
+
+    def open(self):
+        self.auth.login()
+        return self.auth.token
+
+    def close(self):
+        self.auth.logout()
 
 class Category(object):
 
@@ -90,6 +103,13 @@ class FileSystem(object):
     def file_names_as_list(self, collection_of_child_documents):
         return self.names_as_list(collection_of_child_documents)
 
+    def get_filename_from_path(self, path):
+        """
+        Split a file path on the separator and return the file name
+        :return string file name
+        """
+        return path.split("/")[-1]
+
 
 class DirectoryListing(object):
 
@@ -146,3 +166,31 @@ class DirectoryListing(object):
         except:
             pass
         return self.folders
+
+class DocumentManager(object):
+
+    def __init__(self):
+        self.document = Document()
+
+    def create(self, file_obj):
+        document = self.document.new()
+        document.path = self.create_path_from_filename(file_obj)
+        content = self.convert_file_content_to_binary_for_transport(file_obj)
+        return self.create_document_on_openkm(document, content)
+
+    def create_path_from_filename(self, file_obj):
+        """
+        Constructs a path name of the format:
+
+            upload_root + filename
+
+        :returns string:  path name
+        """
+        return settings.OPENKM['UploadRoot'] + file_obj.__str__()
+
+    def convert_file_content_to_binary_for_transport(self, file_obj):
+        return make_file_java_byte_array_compatible(file_obj)
+
+    def create_document_on_openkm(self, document, content):
+        return self.document.create(document, content)
+

@@ -2,22 +2,25 @@ from django.conf import settings
 
 from suds.client import Client
 
+from .utils import logger
+
 if settings.DEBUG:
     import logging
     logging.basicConfig(level=logging.INFO)
     logging.getLogger('suds.client').setLevel(logging.INFO)
 
+PATH = 'dm'
 
 OPENKM_WSDLS = {
-    'Auth': settings.OPENKM['Host'] + 'OpenKM/OKMAuth?wsdl',
-    'Bookmark': settings.OPENKM['Host'] + 'OpenKM/OKMBookmark?wsdl',
-    'Document': settings.OPENKM['Host'] + 'OpenKM/OKMDocument?wsdl',
-    'Search': settings.OPENKM['Host'] + 'OpenKM/OKMSearch?wsdl',
-    'Note': settings.OPENKM['Host'] + 'OpenKM/OKMNote?wsdl',
-    'Folder': settings.OPENKM['Host'] + 'OpenKM/OKMFolder?wsdl',
-    'Property': settings.OPENKM['Host'] + 'OpenKM/OKMProperty?wsdl',
-    'PropertyGroup': settings.OPENKM['Host'] + 'OpenKM/OKMPropertyGroup?wsdl',
-    'Repository': settings.OPENKM['Host'] + 'OpenKM/OKMRepository?wsdl',
+    'Auth': settings.OPENKM['Host'] + '%s/OKMAuth?wsdl' % PATH,
+    'Bookmark': settings.OPENKM['Host'] + '%s/OKMBookmark?wsdl' % PATH,
+    'Document': settings.OPENKM['Host'] + '%s/OKMDocument?wsdl' % PATH,
+    'Search': settings.OPENKM['Host'] + '%s/OKMSearch?wsdl' % PATH,
+    'Note': settings.OPENKM['Host'] + '%s/OKMNote?wsdl' % PATH,
+    'Folder': settings.OPENKM['Host'] + '%s/OKMFolder?wsdl' % PATH,
+    'Property': settings.OPENKM['Host'] + '%s/OKMProperty?wsdl' % PATH,
+    'PropertyGroup': settings.OPENKM['Host'] + '%s/OKMPropertyGroup?wsdl' % PATH,
+    'Repository': settings.OPENKM['Host'] + '%s/OKMRepository?wsdl' % PATH,
     }
 
 def get_service(class_name):
@@ -34,10 +37,11 @@ def get_token():
 class BaseService(object):
 
     def __init__(self, start_session=True):
-        if start_session:
-            self.token = get_token()
         self.service = get_service(self.__class__.__name__)
         self.client = get_client(self.__class__.__name__)
+        if start_session:
+            self.token = get_token()
+
 
 class Auth(BaseService):
     """ Methods related to authentication, granting and revoking privileges. """

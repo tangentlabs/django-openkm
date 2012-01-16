@@ -9,6 +9,8 @@ A Python/Django client library for interaction with the OpenKM web services API.
 
 OpenKM is an open-source, Java document management system with Lucene search built-in.
 
+**INSTALLATION**
+
 Add the following to your settings::
 
     OPENKM = {
@@ -17,6 +19,8 @@ Add the following to your settings::
         'User': 'okmAdmin',
         'Password': 'admin'
     }
+    
+Ensure your MEDIA_ROOT is set up with the correct permissions and working
 
 
 Developed and maintained by Phil Tysoe at `Tangent Labs`_
