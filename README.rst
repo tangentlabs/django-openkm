@@ -1,17 +1,19 @@
 django-openkm
 =============
 
-**WORK IN PROGRESS**
-There are existing tests (500+ lines), models and views - however they need to be refactored to abstract them from their
-current project.  So basically, the Django stuff will come later, but not much later.
-
-A Python/Django client library for interaction with the OpenKM web services API.
-
+A Python/Django client library for interaction with the OpenKM web services API.  Integrates into the Django admin.
 OpenKM is an open-source, Java document management system with Lucene search built-in.
 
-**INSTALLATION**
+INSTALLATION
+------------
 
-Add the following to your settings::
+1. Install with::
+
+    pip install django_openkm
+
+2. Add 'django_openkm' to your INSTALLED_APPS
+
+2. Add the following to your Django settings::
 
     OPENKM = {
         'UploadRoot': '/okm:root/',
@@ -21,8 +23,13 @@ Add the following to your settings::
         'Path': 'OpenKM', 
     }
     
-Ensure your MEDIA_ROOT is set up with the correct permissions and working
+3. Ensure your MEDIA_ROOT is set up with the correct permissions and working
 
+4. Run syncdb and check your Django admin.  You will now be able to upload files through the admin interface.  
+(This will likely be removed later in favour of abstract models classes, but just as proof of concept)
+
+[For OpenKM installation see http://wiki.openkm.com/index.php/Quick_Install.  It's pretty straightforward to setup locally
+just download, unzip to /opt, run the bash script in bin/run.sh and your up and running]
 
 Developed and maintained by Phil Tysoe at `Tangent Labs`_
 
