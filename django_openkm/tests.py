@@ -6,9 +6,6 @@ from .facades import Keyword, Category, DirectoryListing
 from .sync import SyncKeywords, SyncCategories, SyncResource, SyncFolderList
 from .models import OpenKmDocument, OpenKmFolderList
 
-#from tce.resources.models import Resource
-
-
 class ClientTest(TestCase):
     """ Tests of functions and settings """
     
@@ -241,39 +238,38 @@ class KeywordTest(TestCase):
     def tearDown(self):
         delete_test_document_on_openkm()
 
-class SyncKeywordsTest(TestCase):
+if settings.OPENKM['tagging']:
+    class SyncKeywordsTest(TestCase):
 
-    def setUp(self):
-        self.resource = Resource()
-        self.resource.name = 'This is a resource'
-        self.resource.description = 'And its description'
-        self.resource.tag_set = u'One, Two, Three'
-        self.sync_keywords = SyncKeywords()
-        self.path = '/okm:root/test-global.html'
-        self.tags = self.sync_keywords.get_tags_from_resource(self.resource)
+        def setUp(self):
+            self.resource = OpenKmDocument()
+            self.resource.tag_set = u'One, Two, Three'
+            self.sync_keywords = SyncKeywords()
+            self.path = '/okm:root/test-global.html'
+            self.tags = self.sync_keywords.get_tags_from_resource(self.resource)
 
-    def test_get_tags_from_resource(self):
-        """
-        Should take a a comma separated string of tags and return a list
-        """
-        self.assertTrue(isinstance(self.tags, list), msg="Tags should be returned as a list")
+        def test_get_tags_from_resource(self):
+            """
+            Should take a a comma separated string of tags and return a list
+            """
+            self.assertTrue(isinstance(self.tags, list), msg="Tags should be returned as a list")
 
-    def test_tags_are_unicode(self):
-        tags = self.sync_keywords.get_tags_from_resource(self.resource)
-        for tag in tags:
-            self.assertTrue(isinstance(tag, unicode), msg="%s is not a string, it is %s" % (tag, type(tag)))
+        def test_tags_are_unicode(self):
+            tags = self.sync_keywords.get_tags_from_resource(self.resource)
+            for tag in tags:
+                self.assertTrue(isinstance(tag, unicode), msg="%s is not a string, it is %s" % (tag, type(tag)))
 
-    def test_add_keyword_to_openkm_document(self):
-        self.sync_keywords.add_keyword_to_openkm_document(self.path, 'Example')
+        def test_add_keyword_to_openkm_document(self):
+            self.sync_keywords.add_keyword_to_openkm_document(self.path, 'Example')
 
-        # cleanup
-        self.sync_keywords.keyword.remove(self.path, 'Example')
+            # cleanup
+            self.sync_keywords.keyword.remove(self.path, 'Example')
 
-    def test_write_keywords_to_openkm_document(self):
-        self.sync_keywords.write_keywords_to_openkm_document(self.path, self.tags)
+        def test_write_keywords_to_openkm_document(self):
+            self.sync_keywords.write_keywords_to_openkm_document(self.path, self.tags)
 
-    def test_single_document_django_to_helix(self):
-        pass
+        def test_single_document_django_to_helix(self):
+            pass
 
 
 class CategoryTest(TestCase):
@@ -383,7 +379,7 @@ class MockResource(object):
 
 class SyncCategoriesTest(TestCase):
 
-    fixtures = ['resources', 'regions', 'solutions', 'industry', 'roles', 'product', 'methodology']
+    fixtures = []
 
     def setUp(self):
         self.sync_categories = SyncCategories()
@@ -434,7 +430,6 @@ class SyncCategoriesTest(TestCase):
             print self.sync_categories.get_related_objects_from_model(self.r, model_name)
 
 
-
 class SyncResourceTest(TestCase):
 
     def setUp(self):
@@ -445,7 +440,6 @@ class SyncResourceTest(TestCase):
 
     def test_init_was_successful(self):
         """ Check that the objects we need were instantiated correctly """
-        self.assertTrue(isinstance(self.sr.document, Resource))
         self.assertTrue(isinstance(self.sr.sync_keywords, SyncKeywords))
         self.assertTrue(isinstance(self.sr.auth, Auth))
         self.assertTrue(isinstance(self.sr.document, Document))

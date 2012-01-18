@@ -1,5 +1,6 @@
-from .models import OpenKmFolderList, OpenKmDocument
 from django.contrib import admin
+
+from .models import OpenKmFolderList, OpenKmDocument
 
 class OpenKmDocumentAdmin(admin.ModelAdmin):
     readonly_fields = ['author', 'created', 'path', 'permissions', 'subscribed', 'uuid', 'filename']

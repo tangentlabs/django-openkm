@@ -3,7 +3,7 @@ from django.conf import settings
 
 from .client import Auth, Document, Property, PropertyGroup, Repository
 from .facades import Category, Keyword, DirectoryListing
-from .models import OpenKmFolderList
+from .models import OpenKmFolderList, OpenKmDocument
 from .utils import find_key
 
 class SyncPropertiesException(Exception):
@@ -215,13 +215,12 @@ class SyncResource(object):
     Syncs a Resource object to OpenKM
     """
     def __init__(self, document):
-        if not isinstance(document, Document):
+        if not isinstance(document, OpenKmDocument):
             raise SyncResourceException('Must pass a Resource instance to be synced')
         self.auth = Auth()
         self.auth.login()
         self.document = Document()
         self.repository = Repository()
-        self.document = document
         self.sync_keywords = SyncKeywords()
         self.sync_categories = SyncCategories()
 

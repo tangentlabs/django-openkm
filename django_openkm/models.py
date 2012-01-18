@@ -1,6 +1,7 @@
 from django.db import models
+from django.conf import settings
 
-from .facades import Session, DocumentManager, FileSystem
+from .facades import DocumentManager, FileSystem
 
 class OpenKmMetadata(models.Model):
     """
@@ -16,6 +17,43 @@ class OpenKmMetadata(models.Model):
     class Meta:
         abstract = True
 
+
+if settings.OPENKM['tagging']:
+    """
+    Add support for tagging
+    """
+    import tagging
+    from tagging.fields import TagField
+    from tagging.managers import ModelTaggedItemManager
+
+    # Create your models here.
+    class TaggedMixin(models.Model):
+        tag_set = TagField(blank=True, null=True, verbose_name="Tags", max_length=500)
+        tags_editable = models.BooleanField(default=True, help_text="Whether users are allowed to modify tags in the application.")
+
+        @property
+        def tags(self):
+            return tagging.utils.parse_tag_input(self.tag_set)
+
+        tagged = ModelTaggedItemManager()
+
+        class Meta:
+            abstract = True
+
+        def update_tags(self, tags):
+            if self.tags_editable:
+                self.tag_set = tags
+                self.save()
+            return self
+
+    class BaseDocument(OpenKmMetadata, TaggedMixin):
+        pass
+
+else:
+    class BaseDocument(OpenKmMetadata):
+        pass
+
+
 class OpenKmFolderList(OpenKmMetadata):
     """
     Stores category folder metadata from OpenKM in a local table
@@ -29,7 +67,8 @@ class OpenKmFolderList(OpenKmMetadata):
         verbose_name = 'OpenKM Folder List'
         verbose_name_plural = verbose_name
 
-class OpenKmDocument(OpenKmMetadata):
+
+class OpenKmDocument(BaseDocument):
 
     filename = models.CharField(max_length=255, blank=True, null=True)
     file = models.FileField(max_length=255, upload_to='resources/%Y/%m/%d/', blank=True, null=True, help_text="Upload a file from your local machine")
@@ -77,6 +116,9 @@ class OpenKmDocument(OpenKmMetadata):
     class Meta:
         verbose_name = 'OpenKM Document'
         verbose_name_plural = 'OpenKM Documents'
+
+
+
 
 
 
