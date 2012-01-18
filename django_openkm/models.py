@@ -43,11 +43,8 @@ class OpenKmDocument(OpenKmMetadata):
         """
         if self.file and self.id is None:
             """ A new resource to be uploaded OpenKM """
-            session = Session()
-            session.open()
             file_obj = self.file._get_file()
             openkm_document = self.upload_to_openkm(file_obj)
-            session.close()
             self.set_model_fields(openkm_document)
             super(OpenKmDocument, self).save(*args, **kwargs)
             return

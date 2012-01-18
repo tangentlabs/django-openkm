@@ -4,6 +4,7 @@ from django.conf import settings
 from .client import Auth, Document, Folder, Note, OPENKM_WSDLS, Repository, get_token
 from .facades import Keyword, Category, DirectoryListing
 from .sync import SyncKeywords, SyncCategories, SyncResource, SyncFolderList
+from .models import OpenKmDocument, OpenKmFolderList
 
 #from tce.resources.models import Resource
 
@@ -335,22 +336,22 @@ class MockResource(object):
         Creates a Resource to be used in testing and populates the many-to-many fields
         with query sets.  Currently simple calling .all() on the related models
         """
-        resource = Resource(name='test document')
-        resource.save()
+        document = OpenKmDocument()
+        document.save()
 
         # for each model
         for klass in self.sync_categories.MODEL_CATEGORY_MAP.keys():
 
             # get the model_set many-to-many function of the Resource object
             method_name = '%s_set' % klass.__name__.lower()
-            _set = getattr(resource, method_name)
+            _set = getattr(document, method_name)
 
             # populate the resource with objects from the related model
             objects = klass.objects.all()
             for object in objects:
                 _set.add(object)
 
-        return resource
+        return document
 
     def populate_test_model(self, model_klass, related_model_klasses):
         """
