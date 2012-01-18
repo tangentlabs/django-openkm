@@ -210,64 +210,7 @@ class SyncCategories(object):
 class SyncResourceException(Exception):
     pass
 
-class SyncResource(object):
-    """
-    Syncs a Resource object to OpenKM
-    """
-    def __init__(self, document):
-        if not isinstance(document, OpenKmDocument):
-            raise SyncResourceException('Must pass a Resource instance to be synced')
-        self.auth = Auth()
-        self.auth.login()
-        self.document = Document()
-        self.repository = Repository()
-        self.sync_keywords = SyncKeywords()
-        self.sync_categories = SyncCategories()
 
-    def new_openkm_document_object(self):
-        """ Returns a local object instance """
-        return self.document.new()
-
-    def document_exists_on_openkm(self, path):
-        return self.repository.has_node(path)
-
-    def build_openkm_path(self, base_path, file_name):
-        return "%s%s" % (base_path, file_name)
-
-    def upload_to_openkm(self, file):
-        """
-        Uploads the document to the OpenKM server
-        :param file: a file object
-        """
-        path = self.build_openkm_path(settings.OPENKM['UploadRoot'], file.name)
-        openkm_document = self.new_openkm_document_object()
-        openkm_document.path = settings.OPENKM['UploadRoot'] + file.name
-        content = utils.make_file_java_byte_array_compatible(file)
-
-        try:
-            return self.document.create(openkm_document, content)
-        except Exception, e:
-            logger.error("There was a problem uploading the document: %s" % file.name)
-
-    def keywords(self):
-        """
-        TAGS -> KEYWORDS
-        Writes the tags to OpenKM as keywords and confirms that they have been added
-        :returns boolean:  True on success, False on fail
-        """
-        tags = self.sync_keywords.get_tags_from_resource(self.document)
-        self.sync_keywords.write_keywords_to_openkm_document(self.path, tags)
-        return self.sync_keywords.confirm_keywords_written_to_openkm(self.path, tags)
-
-    def categories(self):
-        for related_model_class in self.sync_categories.MODEL_CATEGORY_MAP.keys():
-            self.sync_categories.get_many_to_many_fields_from_model(self.document, related_model_class)
-
-    def properties(self):
-        pass
-
-    def file(self):
-        pass
 
 
 class SyncFolderList(object):

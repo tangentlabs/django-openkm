@@ -103,12 +103,8 @@ class FileSystem(object):
     def file_names_as_list(self, collection_of_child_documents):
         return self.names_as_list(collection_of_child_documents)
 
-    def get_filename_from_path(self, path):
-        """
-        Split a file path on the separator and return the file name
-        :return string file name
-        """
-        return path.split("/")[-1]
+    def get_file_name_from_path(self, path):
+        return path.split('/').pop()
 
 
 class DirectoryListing(object):
