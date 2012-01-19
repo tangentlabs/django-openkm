@@ -163,6 +163,9 @@ class DirectoryListing(object):
             pass
         return self.folders
 
+    def get_all_documents_in_folder(self, folder_path=settings.OPENKM['UploadRoot']):
+        return self.doc.get_children(folder_path)
+
 class DocumentManager(object):
 
     def __init__(self):
