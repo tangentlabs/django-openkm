@@ -22,6 +22,14 @@ class OpenKmFolderList(OpenKmMetadata):
     Stores category folder metadata from OpenKM in a local table
     """
     okm_has_childs = models.CharField(max_length=255, blank=True, null=True)
+    okm_root_folder = models.CharField(max_length=255, blank=True, null=True)
+    okm_first_child_of_root = models.CharField(max_length=255, blank=True, null=True)
+
+    def get_root_folder(self):
+        return self.okm_path.split("/")[1:][0]
+
+    def get_first_child_of_root(self):
+        return self.okm_path.split("/")[1:][1]
 
     def __unicode__(self):
         return self.okm_path
@@ -34,8 +42,8 @@ class OpenKmFolderList(OpenKmMetadata):
 
 class OpenKmDocument(OpenKmMetadata):
 
-    filename = models.CharField(max_length=255, blank=True, null=True)
-    file = models.FileField(max_length=255, upload_to='resources/%Y/%m/%d/', blank=True, null=True, help_text="Upload a file from your local machine")
+    okm_filename = models.CharField(max_length=255, blank=True, null=True)
+    okm_file = models.FileField(max_length=255, upload_to='resources/%Y/%m/%d/', blank=True, null=True, help_text="Upload a file from your local machine")
 
     def save(self, *args, **kwargs):
         """

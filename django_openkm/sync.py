@@ -20,8 +20,6 @@ class SyncProperties(object):
         }
 
     def __init__(self):
-        auth = Auth()
-        auth.login()
         self.property_group = PropertyGroup()
 
     def document_has_property_group(self, document, group_name):
@@ -207,11 +205,9 @@ class SyncCategories(object):
             logger.error("Object does not have method region_set")
 
 
+
 class SyncResourceException(Exception):
     pass
-
-
-
 
 class SyncFolderList(object):
     """
@@ -219,15 +215,20 @@ class SyncFolderList(object):
     @todo make this generic to pickup all the folders across OpenKM, not just
     categories
     """
+    DIRECTORY_SEPARATOR = "/"
+
     def __init__(self):
         self.category = Category()
         self.dir = DirectoryListing()
         self.repository = Repository()
 
-    def execute(self):
+    def execute(self, klass):
+        """
+        :param klass your django model class storing the OpenKM folder list
+        """
         paths = self.get_list_of_root_paths()
         folders = self.traverse_folders(paths)
-        self.save(folders)
+        self.save(folders, klass)
 
     def get_list_of_root_paths(self):
         return [self.category.get_category_root().path, self.repository.get_root_folder().path]
@@ -239,16 +240,16 @@ class SyncFolderList(object):
 
         return folders
 
-    def save(self, folders):
+    def save(self, folders, klass):
         for folder in folders:
             try:
-                cl, created = OpenKmFolderList.objects.get_or_create(uuid=folder.uuid)
-                cl.author = folder.author
-                cl.created = folder.created
-                cl.has_childs = folder.hasChilds
-                cl.path = folder.path
-                cl.permissions = folder.permissions
-                cl.subscribed = folder.subscribed
+                cl, created = klass.objects.get_or_create(okm_uuid=folder.uuid)
+                cl.okm_author = folder.author
+                cl.okm_created = folder.created
+                cl.okm_has_childs = folder.hasChilds
+                cl.okm_path = folder.path
+                cl.okm_permissions = folder.permissions
+                cl.okm_subscribed = folder.subscribed
                 cl.save()
             except Exception, e:
-                logger.error(e)
+                print e
