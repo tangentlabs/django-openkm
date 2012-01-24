@@ -17,6 +17,7 @@ def try_except(fn):
     """
         A decorator to catch suds exceptions
         @todo report the line number from the decorated method, not here
+        @todo allow each function to define the expected exceptions raised, this may mean it is no longer a decorator
        """
     def wrapped(*args, **kwargs):
         try:

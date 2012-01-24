@@ -2,10 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f1e0b030-6d52-4818-b0b2-cddb813e9459" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/django_openkm/exceptions.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/django_openkm/client.py" afterPath="$PROJECT_DIR$/django_openkm/client.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/django_openkm/facades.py" afterPath="$PROJECT_DIR$/django_openkm/facades.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/django_openkm/models.py" afterPath="$PROJECT_DIR$/django_openkm/models.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/django_openkm/utils.py" afterPath="$PROJECT_DIR$/django_openkm/utils.py" />
     </list>
     <ignored path="django-openkm.iws" />
@@ -51,7 +47,7 @@
       <file leaf-file-name="utils.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/django_openkm/utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="14" column="0" selection-start="252" selection-end="252" vertical-scroll-proportion="0.22727273">
+            <state line="19" column="105" selection-start="504" selection-end="504" vertical-scroll-proportion="0.30844155">
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -413,7 +409,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/django_openkm/utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="14" column="0" selection-start="252" selection-end="252" vertical-scroll-proportion="0.22727273">
+        <state line="19" column="105" selection-start="504" selection-end="504" vertical-scroll-proportion="0.30844155">
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
