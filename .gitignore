@@ -5,3 +5,4 @@ fixtures
 migrations
 django_openkm.egg-info
 dist
+.idea
