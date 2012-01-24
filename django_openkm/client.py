@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from suds.client import Client
+from suds import WebFault
 
 if settings.DEBUG:
     import logging
@@ -79,6 +80,9 @@ class Auth(BaseService):
         pass
 
 
+
+from .utils import try_except
+
 class Document(BaseService):
     """Methods related to document management. """
 
@@ -88,15 +92,15 @@ class Document(BaseService):
         """
         return self.client.factory.create('document')
 
+    @try_except
     def create(self, doc, content):
         """
-        Create a new document in the repository.
-        :param Document object (use self.new())
-        :param content Java byte[] compatible (use make_file_java_byte_array_compatible())
-        :return A document object with the properties of the new created document.
-        """
+            Create a new document in the repository.
+            :param Document object (use self.new())
+            :param content Java byte[] compatible (use make_file_java_byte_array_compatible())
+            :return A document object with the properties of the new created document.
+            """
         return self.service.create(token=self.token, doc=doc, content=content)
-
 
     def delete(self, doc_path):
         """

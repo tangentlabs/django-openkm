@@ -1,7 +1,14 @@
+import logging
+logging.basicConfig(
+    level = logging.DEBUG,
+    format = '%(asctime)s %(levelname)s %(message)s',
+)
+
 from django.db import models
 from django.conf import settings
 
 from .facades import DocumentManager, FileSystem
+from .exceptions import *
 
 class OpenKmMetadata(models.Model):
     """
@@ -39,11 +46,10 @@ class OpenKmFolderList(OpenKmMetadata):
         verbose_name = 'OpenKM Folder List'
         verbose_name_plural = verbose_name
 
-
 class OpenKmDocument(OpenKmMetadata):
 
     okm_filename = models.CharField(max_length=255, blank=True, null=True)
-    okm_file = models.FileField(max_length=255, upload_to='resources/%Y/%m/%d/', blank=True, null=True, help_text="Upload a file from your local machine")
+    file = models.FileField(max_length=255, upload_to='resources/%Y/%m/%d/', blank=True, null=True, help_text="Upload a file from your local machine")
 
     def save(self, *args, **kwargs):
         """
@@ -56,8 +62,12 @@ class OpenKmDocument(OpenKmMetadata):
             """ A new resource to be uploaded OpenKM """
             file_obj = self.file._get_file()
             openkm_document = self.upload_to_openkm(file_obj)
-            self.set_model_fields(openkm_document)
-            super(OpenKmDocument, self).save(*args, **kwargs)
+
+            if openkm_document:
+                self.set_model_fields(openkm_document)
+                super(OpenKmDocument, self).save(*args, **kwargs)
+            else:
+                raise Exception('None found when document object was expected')
             return
 
         super(OpenKmDocument, self).save(*args, **kwargs)
