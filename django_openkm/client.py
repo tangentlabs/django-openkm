@@ -1,7 +1,12 @@
+import sys
+from functools import wraps
+
 from django.conf import settings
 
 from suds.client import Client
 from suds import WebFault
+
+import exceptions
 
 if settings.DEBUG:
     import logging
@@ -21,6 +26,22 @@ OPENKM_WSDLS = {
     'PropertyGroup': settings.OPENKM['Host'] + '%s/OKMPropertyGroup?wsdl' % PATH,
     'Repository': settings.OPENKM['Host'] + '%s/OKMRepository?wsdl' % PATH,
     }
+
+def try_except(fn):
+    """
+        A decorator to catch suds exceptions and rethrow custom excpetions to mirror the actual exceptions raised by OpenKM
+        @todo allow each function to define the expected exceptions raised
+       """
+    def wrapped(*args, **kwargs):
+        try:
+            fn(*args, **kwargs)
+        except Exception, e:
+            et, ei, tb = sys.exc_info()
+            parser = exceptions.ExceptionParser()
+            raised_exception = parser.get_raised_exception_class_name(e)
+            exception = getattr(exceptions, raised_exception)
+            raise exception, exception(e), tb
+    return wraps(fn)(wrapped)
 
 def get_service(class_name):
     return Client(OPENKM_WSDLS[class_name]).service
@@ -81,7 +102,7 @@ class Auth(BaseService):
 
 
 
-from .utils import try_except
+#from .utils import try_except
 
 class Document(BaseService):
     """Methods related to document management. """

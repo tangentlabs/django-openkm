@@ -13,22 +13,6 @@ logger = logging.getLogger('tce')
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(levelname)-8s %(message)s')
 
-def try_except(fn):
-    """
-        A decorator to catch suds exceptions
-        @todo report the line number from the decorated method, not here
-        @todo allow each function to define the expected exceptions raised, this may mean it is no longer a decorator
-       """
-    def wrapped(*args, **kwargs):
-        try:
-            fn(*args, **kwargs)
-        except Exception, e:
-            parser = exceptions.ExceptionParser()
-            raised_exception = parser.get_raised_exception_class_name(e)
-            exception = getattr(exceptions, raised_exception)
-            raise exception(parser.get_message(e))
-    return wrapped
-
 def make_file_java_byte_array_compatible(file_obj):
     """ 
     Reads in a file and converts it to a format accepted as Java byte array 

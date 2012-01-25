@@ -2,6 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f1e0b030-6d52-4818-b0b2-cddb813e9459" name="Default" comment="">
+      <change type="DELETED" beforePath="$PROJECT_DIR$/django_openkm/.models.py.swp" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/django_openkm/client.py" afterPath="$PROJECT_DIR$/django_openkm/client.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/django_openkm/models.py" afterPath="$PROJECT_DIR$/django_openkm/models.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/django_openkm/utils.py" afterPath="$PROJECT_DIR$/django_openkm/utils.py" />
     </list>
     <ignored path="django-openkm.iws" />
@@ -37,9 +41,7 @@
         <entry file="file://$PROJECT_DIR$/django_openkm/facades.py">
           <provider selected="true" editor-type-id="text-editor">
             <state line="193" column="32" selection-start="5677" selection-end="5677" vertical-scroll-proportion="0.0">
-              <folding>
-                <element signature="e#0#32#0" expanded="true" />
-              </folding>
+              <folding />
             </state>
           </provider>
         </entry>
@@ -47,7 +49,7 @@
       <file leaf-file-name="utils.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/django_openkm/utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="19" column="105" selection-start="504" selection-end="504" vertical-scroll-proportion="0.30844155">
+            <state line="15" column="0" selection-start="253" selection-end="253" vertical-scroll-proportion="0.24350649">
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -67,9 +69,9 @@
       <file leaf-file-name="client.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/django_openkm/client.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="35" column="26" selection-start="1185" selection-end="1185" vertical-scroll-proportion="0.0">
+            <state line="32" column="74" selection-start="1214" selection-end="1214" vertical-scroll-proportion="0.0">
               <folding>
-                <element signature="e#0#32#0" expanded="true" />
+                <element signature="e#0#10#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -78,7 +80,7 @@
       <file leaf-file-name="models.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/django_openkm/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="69" column="32" selection-start="2528" selection-end="2528" vertical-scroll-proportion="0.0">
+            <state line="15" column="74" selection-start="393" selection-end="393" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -112,9 +114,9 @@
         <option value="$PROJECT_DIR$/django_openkm/admin.py" />
         <option value="$PROJECT_DIR$/django_openkm/sync.py" />
         <option value="$PROJECT_DIR$/django_openkm/facades.py" />
+        <option value="$PROJECT_DIR$/django_openkm/exceptions.py" />
         <option value="$PROJECT_DIR$/django_openkm/models.py" />
         <option value="$PROJECT_DIR$/django_openkm/client.py" />
-        <option value="$PROJECT_DIR$/django_openkm/exceptions.py" />
         <option value="$PROJECT_DIR$/django_openkm/utils.py" />
       </list>
     </option>
@@ -149,7 +151,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -184,6 +185,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -292,8 +294,8 @@
       <window_info id="Data Sources" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13555788" sideWeight="0.50526315" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13555788" sideWeight="0.48736843" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13555788" sideWeight="0.5136842" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13555788" sideWeight="0.47894737" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
@@ -372,27 +374,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/django_openkm/facades.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="193" column="32" selection-start="5677" selection-end="5677" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#0#32#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/django_openkm/models.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="69" column="32" selection-start="2528" selection-end="2528" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/django_openkm/client.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="35" column="26" selection-start="1185" selection-end="1185" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#0#32#0" expanded="true" />
-          </folding>
-        </state>
+        <state line="193" column="32" selection-start="5677" selection-end="5677" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/django_openkm/tests.py">
@@ -400,16 +382,28 @@
         <state line="144" column="8" selection-start="4763" selection-end="4763" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/django_openkm/models.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="15" column="74" selection-start="393" selection-end="393" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/django_openkm/exceptions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="29" selection-start="466" selection-end="466" vertical-scroll-proportion="0.0">
-          <folding />
+        <state line="13" column="29" selection-start="466" selection-end="466" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/django_openkm/client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="32" column="74" selection-start="1214" selection-end="1214" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/django_openkm/utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="105" selection-start="504" selection-end="504" vertical-scroll-proportion="0.30844155">
+        <state line="15" column="0" selection-start="253" selection-end="253" vertical-scroll-proportion="0.24350649">
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
