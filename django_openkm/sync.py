@@ -1,9 +1,10 @@
+import logging
+
 from suds import WebFault
 from django.conf import settings
 
-from .client import Auth, Document, Property, PropertyGroup, Repository
+from .client import PropertyGroup, Repository
 from .facades import Category, Keyword, DirectoryListing
-from .models import OpenKmFolderList, OpenKmDocument
 from .utils import find_key
 
 class SyncPropertiesException(Exception):
@@ -134,14 +135,15 @@ class SyncCategories(object):
         """
         if not parent_path:
             parent_path = self.category.get_category_root().path
+        logging.info("parent path: %s", parent_path)
 
         for category_name in self.MODEL_CATEGORY_MAP.values():
             path = self.category.construct_valid_path_string(parent_path, category_name)
             try:
                 self.category.create(path)
-                logger.info("%s created" % path)
+                logging.info("%s created" % path)
             except:
-                logger.info("%s creation failed" % path)
+                logging.info("%s creation failed" % path)
 
     def get_child_categories(self, parent_path):
         """
@@ -171,12 +173,12 @@ class SyncCategories(object):
                 self.category.create('/okm:categories/%s/%s' % (category_name,\
                                                                 object.__unicode__().replace('/','')))
             except:
-                logger.info("%s creation failed" % object.__unicode__().replace('/',''))
+                logging.info("%s creation failed" % object.__unicode__().replace('/',''))
 
     def openkm_to_django(self):
         pass
 
-    def get_many_to_many_fields_from_model(self, document, related_model_class):
+    def get_objects_from_m2m_model(self, document, related_model_class):
         """
         Accepts a Document and a single class object of a many-to-many field
         :returns queryset the related model objects associated with the given resource
@@ -202,7 +204,7 @@ class SyncCategories(object):
             _member = getattr(document, method_name)
             return _member.all()
         else:
-            logger.error("Object does not have method region_set")
+            logging.error("Object does not have method %s" % method_name)
 
 
 
@@ -226,8 +228,14 @@ class SyncFolderList(object):
         """
         :param klass your django model class storing the OpenKM folder list
         """
+        logging.info('Class: %s', klass)
+
         paths = self.get_list_of_root_paths()
+        logging.info(paths)
+
         folders = self.traverse_folders(paths)
+        logging.info(folders)
+
         self.save(folders, klass)
 
     def get_list_of_root_paths(self):
@@ -242,6 +250,7 @@ class SyncFolderList(object):
 
     def save(self, folders, klass):
         for folder in folders:
+            logging.info(folder)
             try:
                 cl, created = klass.objects.get_or_create(okm_uuid=folder.uuid)
                 cl.okm_author = folder.author

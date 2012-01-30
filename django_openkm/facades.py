@@ -178,13 +178,6 @@ class DocumentManager(object):
         return self.create_document_on_openkm(document, content)
 
     def create_path_from_filename(self, file_obj):
-        """
-        Constructs a path name of the format:
-
-            upload_root + filename
-
-        :returns string:  path name
-        """
         return settings.OPENKM['UploadRoot'] + file_obj.__str__()
 
     def convert_file_content_to_binary_for_transport(self, file_obj):
@@ -193,4 +186,12 @@ class DocumentManager(object):
     def create_document_on_openkm(self, document, content):
         return self.document.create(document, content)
 
+    def get_path(self, uuid):
+        return self.document.get_path(uuid)
+
+    def get_properties(self, doc_path):
+        return self.document.get_properties(doc_path)
+
+class RepositoryManager(object):
+    pass
 

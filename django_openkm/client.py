@@ -8,10 +8,7 @@ from suds import WebFault
 
 import exceptions
 
-if settings.DEBUG:
-    import logging
-    logging.basicConfig(level=logging.INFO)
-    logging.getLogger('suds.client').setLevel(logging.INFO)
+
 
 PATH = settings.OPENKM['Path']
 
@@ -113,7 +110,6 @@ class Document(BaseService):
         """
         return self.client.factory.create('document')
 
-    @try_except
     def create(self, doc, content):
         """
             Create a new document in the repository.

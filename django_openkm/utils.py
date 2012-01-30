@@ -1,18 +1,10 @@
 import base64
-import logging
 
 import suds
-
-import exceptions
-import utils
 
 """
 Some useful helper and decorator functions
 """
-logger = logging.getLogger('tce')
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(levelname)-8s %(message)s')
-
 def make_file_java_byte_array_compatible(file_obj):
     """ 
     Reads in a file and converts it to a format accepted as Java byte array 
