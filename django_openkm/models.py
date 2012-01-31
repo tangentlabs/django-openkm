@@ -23,21 +23,25 @@ class OpenKmMetadata(models.Model):
 
 class OpenKmFolderListManager(models.Manager):
 
-    def get_uuids_from_custom_list(self, and_predicates, or_predicates):
+    def custom_path_query(self, and_predicates, or_predicates):
         """
-        Given the parameter format below, dynamically builds a query of AND and OR arguments and
-        returns the uuids as a value_list. This allows you to be flexible with the required path
-        structure
-        and_predicates = [('okm_path__icontains','categories'), ('okm_path__icontains','Region')]
-        or_predicates = [('okm_path__icontains', 'North America'), ('okm_path__icontains','EMEA')]
+        :param and_predicates: list of AND query arguments eg. ['category', 'Region']
+        :param or_predicates: list of OR query arguments eg. ['Latin-America', 'EMEA']
+        :returns a list of uuids
         """
+        and_predicates = self._build_predicate_list(and_predicates)
+        or_predicates = self._build_predicate_list(or_predicates)
+
         and_list = [Q(x) for x in and_predicates]
         or_list = [Q(x) for x in or_predicates]
 
         query_set = super(OpenKmFolderListManager, self).get_query_set()
         query_set.filter(reduce(operator.and_, and_list))
         query_set.filter(reduce(operator.or_, or_list))
-        return query_set.values_list('okm_uuids')
+        return [result[0] for result in query_set.values_list('okm_uuid')]
+
+    def _build_predicate_list(self, arguments):
+        return [('okm_path__icontains', argument) for argument in arguments]
 
 class OpenKmFolderList(OpenKmMetadata):
     okm_has_childs = models.CharField(max_length=255, blank=True, null=True)
