@@ -1,6 +1,8 @@
+import logging
+
 from django.conf import settings
 
-from .client import Auth, Document, Folder, Repository, Property
+from .client import Auth, Document, Folder, Repository, Property, PropertyGroup
 from .utils import make_file_java_byte_array_compatible
 
 class Session(object):
@@ -194,4 +196,49 @@ class DocumentManager(object):
 
 class RepositoryManager(object):
     pass
+
+class Property(object):
+
+    def __init__(self):
+        self.property_group = PropertyGroup()
+
+    def get_property_groups_for_document(self, doc_path):
+        return self.property_group.get_groups(doc_path)
+
+    def get_document_properties_for_group(self, doc_path, group_name):
+        return self.property_group.get_properties(doc_path, group_name)
+
+    def update_document_properties(self, properties, new_values):
+        """
+        :param properties: formElementComplexArray as returned by SUDs
+        :new_values: dictionary of the form { label : value }
+        """
+        for property in properties[0]:
+            logging.info('property.label: %s', property.label)
+            if hasattr(property, 'label') and property.label in new_values.keys():
+                if hasattr(property, 'options'):
+                    try:
+                        property.options = self.update_options_list(property.options, new_values)
+                    except KeyError, e:
+                        logging.exception(e)
+                else:
+                    property.value = new_values[property.label]
+
+        return properties
+
+    def update_options_list(self, options, new_values):
+       for option in options:
+           if option.label in new_values.values():
+               option.selected = True
+               logging.info('Updating option[%s].selected to True', option.label)
+           else:
+               option.selected = False
+
+       return options
+
+    def update_document_on_openkm(self, node_path, group_name, properties):
+        self.property_group.remove_group(node_path, group_name)
+        return self.property_group.set_properties(node_path, group_name, properties)
+
+
 

@@ -4,63 +4,8 @@ from suds import WebFault
 from django.conf import settings
 
 from .client import PropertyGroup, Repository
-from .facades import Category, Keyword, DirectoryListing
+from .facades import Category, Keyword, DirectoryListing, Property
 from .utils import find_key
-
-class SyncPropertiesException(Exception):
-    pass
-
-class SyncProperties(object):
-
-    PROPERTY_GROUP = 'okg:customProperties'
-
-    # django model attributes -> openkm properties
-    MODEL_PROPERTY_MAP = {
-        'name': 'Title',
-        'description': 'Description',
-        }
-
-    def __init__(self):
-        self.property_group = PropertyGroup()
-
-    def document_has_property_group(self, document, group_name):
-        return self.property_group.has_group(document.path, group_name)
-
-    def update_properties(self, resource, properties):
-        for property in properties.item:
-            if property.label in self.MODEL_PROPERTY_MAP.values():
-                django_attr = find_key(self.MODEL_PROPERTY_MAP, property.label)
-                property.value = resource.__getattribute__(django_attr)
-        return properties
-
-    def update_django_model_attributes(self, model, properties):
-        for property in properties.item:
-            if property.label in self.MODEL_PROPERTY_MAP.values():
-                model_attribute_name = find_key(self.MODEL_PROPERTY_MAP, property.label)
-                setattr(model, model_attribute_name, property.value)
-        return model.save()
-
-    def django_to_openkm(self, resource, document):
-        # if document has the group, then grab the properties and remove it, as
-        # we need to re-add it if we want to modify it
-        if self.document_has_property_group(document, self.PROPERTY_GROUP):
-            properties = self.property_group.get_properties(document.path, self.PROPERTY_GROUP)
-            self.property_group.remove_group(document.path, self.PROPERTY_GROUP)
-
-        self.property_group.add_group(document.path, self.PROPERTY_GROUP)
-
-        if not properties:
-            properties = self.property_group.get_properties(document.path, self.PROPERTY_GROUP)
-
-        updated_properties = self.update_properties(resource, properties)
-        self.property_group.set_properties(document.path, self.PROPERTY_GROUP, updated_properties)
-
-    def openkm_to_django(self, resource, document):
-        if not self.document_has_property_group(document, self.PROPERTY_GROUP):
-            raise SyncPropertiesException('OpenKM document does not have %s' % self.PROPERTY_GROUP)
-        properties = self.property_group.get_properties(document.path, self.PROPERTY_GROUP)
-
-
 
 class SyncKeywords(object):
 
@@ -262,3 +207,39 @@ class SyncFolderList(object):
                 cl.save()
             except Exception, e:
                 print e
+
+class SyncProperties(object):
+
+    # @todo these values will need to be set from the Django Document model
+    PROPERTY_GROUP_MAP = {
+        "okg:customProperties": {
+            "Title": 'hello world',
+            'Description': 'this is my super description',
+            'Languages': 'English',
+            },
+        "okg:salesProperties": {
+            'Asset Type': 'White Papers',
+            }
+    }
+
+    def __init__(self):
+        self.property = Property()
+        self.property_group = PropertyGroup()
+
+    def execute(self, resource):
+        self.django_to_openkm(resource)
+
+    def django_to_openkm(self, resource):
+        """
+        Updates OpenKM properties from the
+        """
+        for property_group in self.PROPERTY_GROUP_MAP:
+            logging.debug("property_group: %s", property_group)
+            if not self.property_group.has_group(resource.okm_path, property_group):
+                self.property_group.add_group(resource.okm_path, property_group)
+
+            properties = self.property_group.get_properties(resource.okm_path, property_group)
+
+            # update the properties values and set them on OpenKM
+            updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
+            self.property_group.set_properties(resource.okm_path, property_group, updated_properties)

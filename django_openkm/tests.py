@@ -1,9 +1,9 @@
 from django.test import TestCase
 from django.conf import settings
 
-from .client import Auth, Document, Folder, Note, OPENKM_WSDLS, Repository, get_token
+from .client import Auth, Document, Folder, Note, OPENKM_WSDLS, Repository, PropertyGroup
 from .facades import Keyword, Category, DirectoryListing
-from .sync import SyncKeywords, SyncCategories, SyncResource, SyncFolderList
+from .sync import SyncKeywords, SyncCategories, SyncFolderList
 from .models import OpenKmDocument, OpenKmFolderList
 
 class ClientTest(TestCase):
@@ -162,6 +162,50 @@ class DocumentTest(TestCase):
     def tearDown(self):
         self.doc.delete(self.test_doc_path)
         self.auth.logout()
+
+class PropertyTest(TestCase):
+    pass
+
+class PropertyGroupTest(TestCase):
+
+    def setUp(self):
+        self.test_document = create_test_document_on_openkm()
+        self.property_group = PropertyGroup()
+        self.document = Document()
+        self.new_group = 'okg:customProperties'
+
+    def test_add_and_remove_group(self):
+        """
+        Creates a new document
+        Adds a property group (which must already exist on OpenKM) to a document
+        Checks the property group has been added to the document
+        Removes the group
+        Checks it has been removed
+        Deletes document
+        """
+        self.property_group.add_group(self.test_document.path, self.new_group)
+        property_groups = self.property_group.get_groups(self.test_document.path)
+        assigned_property_group = property_groups.item[0].name
+        self.assertEqual(assigned_property_group, self.new_group, msg="Assigned property group not as expected")
+        self.property_group.remove_group(self.test_document.path, self.new_group)
+        property_groups = self.property_group.get_groups(self.test_document.path)
+        if property_groups:
+            raise Exception('Document has property groups %s' % property_groups)
+
+    def test_get_all_groups(self):
+        pass
+
+    def test_get_properties(self):
+        pass
+
+    def test_set_properties(self):
+        pass
+
+    def test_has_group(self):
+        pass
+
+    def tearDown(self):
+        delete_test_document_on_openkm()
 
 def get_test_document_path():
     return '%snotes.pdf' % settings.OPENKM['UploadRoot']

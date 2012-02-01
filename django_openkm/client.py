@@ -1,4 +1,4 @@
-import sys
+import sys, logging
 from functools import wraps
 
 from django.conf import settings
@@ -8,7 +8,7 @@ from suds import WebFault
 
 import exceptions
 
-
+logging.getLogger('suds.client').setLevel(logging.INFO)
 
 PATH = settings.OPENKM['Path']
 
