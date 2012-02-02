@@ -2,13 +2,13 @@ import logging
 
 from django.conf import settings
 
-from .client import Auth, Document, Folder, Repository, Property, PropertyGroup
+import client
 from .utils import make_file_java_byte_array_compatible
 
 class Session(object):
 
     def __init__(self):
-        self.auth = Auth()
+        self.auth = client.Auth()
 
     def open(self):
         self.auth.login()
@@ -20,9 +20,9 @@ class Session(object):
 class Category(object):
 
     def __init__(self):
-        self.folder = Folder()
-        self.repository = Repository()
-        self.property = Property()
+        self.folder = client.Folder()
+        self.repository = client.Repository()
+        self.property = client.Property()
 
     def add_to_node(self, node_path, category_uuid):
         self.property.add_category(node_path, category_uuid)
@@ -64,8 +64,8 @@ class Category(object):
 class Keyword(object):
 
     def __init__(self):
-        self.property = Property()
-        self.document = Document()
+        self.property = client.Property()
+        self.document = client.Document()
 
     def add(self, path, keyword):
         return self.property.add_keyword(path, keyword)
@@ -115,8 +115,8 @@ class DirectoryListing(object):
     folders = []
 
     def __init__(self):
-        self.doc = Document()
-        self.folder = Folder()
+        self.doc = client.Document()
+        self.folder = client.Folder()
 
     def get_root_path(self):
         return settings.OPENKM['UploadRoot']
@@ -171,7 +171,7 @@ class DirectoryListing(object):
 class DocumentManager(object):
 
     def __init__(self):
-        self.document = Document()
+        self.document = client.Document()
 
     def create(self, file_obj):
         document = self.document.new()
@@ -200,7 +200,7 @@ class RepositoryManager(object):
 class Property(object):
 
     def __init__(self):
-        self.property_group = PropertyGroup()
+        self.property_group = client.PropertyGroup()
 
     def get_property_groups_for_document(self, doc_path):
         return self.property_group.get_groups(doc_path)

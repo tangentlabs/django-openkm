@@ -1,6 +1,6 @@
 import datetime
 import operator
-
+import logging
 from django.db import models
 from django.conf import settings
 from django.db.models import Q
@@ -29,16 +29,15 @@ class OpenKmFolderListManager(models.Manager):
         :param or_predicates: list of OR query arguments eg. ['Latin-America', 'EMEA']
         :returns a list of uuids
         """
-        and_predicates = self._build_predicate_list(and_predicates)
-        or_predicates = self._build_predicate_list(or_predicates)
+        and_predicates_list = self._build_predicate_list(and_predicates)
+        or_predicates_list = self._build_predicate_list(or_predicates)
 
-        and_list = [Q(x) for x in and_predicates]
-        or_list = [Q(x) for x in or_predicates]
+        and_list = [Q(x) for x in and_predicates_list]
+        or_list = [Q(x) for x in or_predicates_list]
 
         query_set = super(OpenKmFolderListManager, self).get_query_set()
-        query_set.filter(reduce(operator.and_, and_list))
-        query_set.filter(reduce(operator.or_, or_list))
-        return [result[0] for result in query_set.values_list('okm_uuid')]
+        query_set = query_set.filter(reduce(operator.and_, and_list) and reduce(operator.or_, or_list))
+        return [resource.okm_uuid for resource in query_set]
 
     def _build_predicate_list(self, arguments):
         return [('okm_path__icontains', argument) for argument in arguments]

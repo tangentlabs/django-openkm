@@ -63,6 +63,7 @@ class SyncKeywords(object):
         tags = ','.join(keywords)
         document.update_tags(tags)
 
+
 class SyncCategories(object):
     """
     Syncronises categories from Django to OpenKM.
@@ -131,6 +132,8 @@ class SyncCategories(object):
         method_name = '%s_set' % related_model_class.__name__.lower()
         _set = getattr(document, method_name)
 
+#        import ipdb; ipdb.set_trace()
+
         return _set.all()
 
     def get_related_objects_from_model(self, document, related_model_name):
@@ -152,9 +155,41 @@ class SyncCategories(object):
             logging.error("Object does not have method %s" % method_name)
 
 
+class SyncProperties(object):
 
-class SyncResourceException(Exception):
-    pass
+    def __init__(self):
+        self.property = Property()
+        self.property_group = PropertyGroup()
+
+    def execute(self, resource):
+        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(resource)
+        logging.info(self.PROPERTY_GROUP_MAP)
+        self.django_to_openkm(resource)
+
+    def django_to_openkm(self, resource):
+        for property_group in self.PROPERTY_GROUP_MAP:
+            logging.debug("property_group: %s", property_group)
+            if not self.property_group.has_group(resource.okm_path, property_group):
+                self.property_group.add_group(resource.okm_path, property_group)
+
+            properties = self.property_group.get_properties(resource.okm_path, property_group)
+
+            # update the properties values and set them on OpenKM
+            updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
+            self.property_group.set_properties(resource.okm_path, property_group, updated_properties)
+
+    def populate_property_group_map(self, resource):
+        return {
+            "okg:customProperties": {
+                "okp:customProperties.title": resource.name,
+                'okp:customProperties.description': resource.description,
+                'okp:customProperties.languages': resource.language,
+                },
+            "okg:salesProperties": {
+                'okp:salesProperties.assetType': resource.get_type_display(),
+                }
+        }
+
 
 class SyncFolderList(object):
     """
@@ -208,37 +243,3 @@ class SyncFolderList(object):
             except Exception, e:
                 print e
 
-class SyncProperties(object):
-
-    def __init__(self):
-        self.property = Property()
-        self.property_group = PropertyGroup()
-
-    def execute(self, resource):
-        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(resource)
-        logging.info(self.PROPERTY_GROUP_MAP)
-        self.django_to_openkm(resource)
-
-    def django_to_openkm(self, resource):
-        for property_group in self.PROPERTY_GROUP_MAP:
-            logging.debug("property_group: %s", property_group)
-            if not self.property_group.has_group(resource.okm_path, property_group):
-                self.property_group.add_group(resource.okm_path, property_group)
-
-            properties = self.property_group.get_properties(resource.okm_path, property_group)
-
-            # update the properties values and set them on OpenKM
-            updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
-            self.property_group.set_properties(resource.okm_path, property_group, updated_properties)
-
-    def populate_property_group_map(self, resource):
-        return {
-            "okg:customProperties": {
-                "okp:customProperties.title": resource.name,
-                'okp:customProperties.description': resource.description,
-                'okp:customProperties.languages': resource.language,
-                },
-            "okg:salesProperties": {
-                'okp:salesProperties.assetType': resource.get_type_display(),
-                }
-        }
