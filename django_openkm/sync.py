@@ -213,12 +213,12 @@ class SyncProperties(object):
     # @todo these values will need to be set from the Django Document model
     PROPERTY_GROUP_MAP = {
         "okg:customProperties": {
-            "Title": 'hello world',
-            'Description': 'this is my super description',
-            'Languages': 'English',
+            "okp:customProperties.title": 'hello world',
+            'okp:customProperties.description': 'this is my super description',
+            'okp:customProperties.languages': 'English',
             },
         "okg:salesProperties": {
-            'Asset Type': 'White Papers',
+            'okp:salesProperties.assetType': 'White Papers',
             }
     }
 

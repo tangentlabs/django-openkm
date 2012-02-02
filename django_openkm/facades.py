@@ -214,20 +214,22 @@ class Property(object):
         :new_values: dictionary of the form { label : value }
         """
         for property in properties[0]:
-            logging.info('property.label: %s', property.label)
-            if hasattr(property, 'label') and property.label in new_values.keys():
+            #logging.info('property.name: %s', property.name)
+            if hasattr(property, 'label') and property.name in new_values.keys():
                 if hasattr(property, 'options'):
                     try:
                         property.options = self.update_options_list(property.options, new_values)
                     except KeyError, e:
                         logging.exception(e)
                 else:
-                    property.value = new_values[property.label]
+                    logging.info('Updating %s to %s' % (property.name, new_values[property.name]))
+                    property.value = new_values[property.name]
 
         return properties
 
     def update_options_list(self, options, new_values):
        for option in options:
+           logging.info(option)
            if option.label in new_values.values():
                option.selected = True
                logging.info('Updating option[%s].selected to True', option.label)
