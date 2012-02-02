@@ -229,7 +229,6 @@ class Property(object):
 
     def update_options_list(self, options, new_values):
        for option in options:
-           logging.info(option)
            if option.label in new_values.values():
                option.selected = True
                logging.info('Updating option[%s].selected to True', option.label)

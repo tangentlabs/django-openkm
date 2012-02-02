@@ -210,29 +210,16 @@ class SyncFolderList(object):
 
 class SyncProperties(object):
 
-    # @todo these values will need to be set from the Django Document model
-    PROPERTY_GROUP_MAP = {
-        "okg:customProperties": {
-            "okp:customProperties.title": 'hello world',
-            'okp:customProperties.description': 'this is my super description',
-            'okp:customProperties.languages': 'English',
-            },
-        "okg:salesProperties": {
-            'okp:salesProperties.assetType': 'White Papers',
-            }
-    }
-
     def __init__(self):
         self.property = Property()
         self.property_group = PropertyGroup()
 
     def execute(self, resource):
+        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(resource)
+        logging.info(self.PROPERTY_GROUP_MAP)
         self.django_to_openkm(resource)
 
     def django_to_openkm(self, resource):
-        """
-        Updates OpenKM properties from the
-        """
         for property_group in self.PROPERTY_GROUP_MAP:
             logging.debug("property_group: %s", property_group)
             if not self.property_group.has_group(resource.okm_path, property_group):
@@ -243,3 +230,15 @@ class SyncProperties(object):
             # update the properties values and set them on OpenKM
             updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
             self.property_group.set_properties(resource.okm_path, property_group, updated_properties)
+
+    def populate_property_group_map(self, resource):
+        return {
+            "okg:customProperties": {
+                "okp:customProperties.title": resource.name,
+                'okp:customProperties.description': resource.description,
+                'okp:customProperties.languages': resource.language,
+                },
+            "okg:salesProperties": {
+                'okp:salesProperties.assetType': resource.get_type_display(),
+                }
+        }
