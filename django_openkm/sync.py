@@ -3,6 +3,7 @@ import logging
 from suds import WebFault
 from django.conf import settings
 
+from django_openkm import utils
 from .client import PropertyGroup, Repository
 from .facades import Category, Keyword, DirectoryListing, Property
 from .utils import find_key
@@ -111,6 +112,7 @@ class SyncCategories(object):
         The parent category should already exist.
         :param model_class: model class object
         :param category_name: string (name of the Category on OpenKM)
+        @todo confirm the replace char
         """
         objects = model_class.objects.all()
 
@@ -121,7 +123,9 @@ class SyncCategories(object):
             except:
                 logging.info("%s creation failed" % object.__unicode__().replace('/',''))
 
-    def openkm_to_django(self):
+    def openkm_to_django(self, resource):
+        from django_openkm import facades
+        #facades.Category
         pass
 
     def get_objects_from_m2m_model(self, document, related_model_class):
@@ -161,12 +165,10 @@ class SyncProperties(object):
         self.property = Property()
         self.property_group = PropertyGroup()
 
-    def execute(self, resource):
+    def django_to_openkm(self, resource):
         self.PROPERTY_GROUP_MAP = self.populate_property_group_map(resource)
         logging.info(self.PROPERTY_GROUP_MAP)
-        self.django_to_openkm(resource)
 
-    def django_to_openkm(self, resource):
         for property_group in self.PROPERTY_GROUP_MAP:
             logging.debug("property_group: %s", property_group)
             if not self.property_group.has_group(resource.okm_path, property_group):
@@ -176,8 +178,46 @@ class SyncProperties(object):
 
             # update the properties values and set them on OpenKM
             updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
+            self.property_group.add_group(resource.okm_path, property_group)
             self.property_group.set_properties(resource.okm_path, property_group, updated_properties)
 
+    def openkm_to_django(self, resource):
+        self.PROPERTY_GROUP_MAP = self.reverse_mapping()
+
+        document_property_groups = self.property.get_property_groups_for_document(resource.okm_path)
+
+        for property_group in document_property_groups[0]:
+            document_properties = self.property.get_document_properties_for_group(resource.okm_path, property_group.name)
+            property_map = self.PROPERTY_GROUP_MAP[property_group.name]
+            self.set_attributes(property_map, document_properties[0], resource)
+
+    def set_attributes(self, property_map, document_properties, resource):
+        for document_property in document_properties:
+            if property_map.get(document_property.name, None):
+                # the property exists in the map
+                name = property_map.get(document_property.name, None)
+                if not isinstance(name, tuple):
+                    # this is a normal text attribute so save it
+                    setattr(resource, name, document_property.value)
+                else:
+                    # this is a Django 'choice' so lookup if required
+                    name, choices = name
+                    option = self.get_option(document_property.options)
+                    if choices:
+                        value = utils.find_key(dict(choices), option)
+                        setattr(resource, name, value)
+                    else:
+                        setattr(resource, name, option)
+        resource.save()
+
+    def get_option(self, options):
+        for option in options:
+            if option.selected:
+                return option.label
+
+    """
+    @todo The two functions below violate the DRY principle and need to be merged into a single dictionary
+    """
     def populate_property_group_map(self, resource):
         return {
             "okg:customProperties": {
@@ -187,6 +227,18 @@ class SyncProperties(object):
                 },
             "okg:salesProperties": {
                 'okp:salesProperties.assetType': resource.get_type_display(),
+                }
+        }
+
+    def reverse_mapping(self):
+        return {
+            "okg:customProperties": {
+                "okp:customProperties.title": 'name',
+                'okp:customProperties.description': 'description',
+                'okp:customProperties.languages': ('language', None)
+                },
+            "okg:salesProperties": {
+                'okp:salesProperties.assetType': ('type', RESOURCE_TYPES),
                 }
         }
 

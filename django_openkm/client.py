@@ -10,18 +10,20 @@ import exceptions
 
 logging.getLogger('suds.client').setLevel(logging.INFO)
 
-PATH = settings.OPENKM['Path']
+import ipdb; ipdb.set_trace()
+
+PATH = settings.OPENKM['configuration']['Path']
 
 OPENKM_WSDLS = {
-    'Auth': settings.OPENKM['Host'] + '%s/OKMAuth?wsdl' % PATH,
-    'Bookmark': settings.OPENKM['Host'] + '%s/OKMBookmark?wsdl' % PATH,
-    'Document': settings.OPENKM['Host'] + '%s/OKMDocument?wsdl' % PATH,
-    'Search': settings.OPENKM['Host'] + '%s/OKMSearch?wsdl' % PATH,
-    'Note': settings.OPENKM['Host'] + '%s/OKMNote?wsdl' % PATH,
-    'Folder': settings.OPENKM['Host'] + '%s/OKMFolder?wsdl' % PATH,
-    'Property': settings.OPENKM['Host'] + '%s/OKMProperty?wsdl' % PATH,
-    'PropertyGroup': settings.OPENKM['Host'] + '%s/OKMPropertyGroup?wsdl' % PATH,
-    'Repository': settings.OPENKM['Host'] + '%s/OKMRepository?wsdl' % PATH,
+    'Auth': settings.OPENKM['configuration']['Host'] + '%s/OKMAuth?wsdl' % PATH,
+    'Bookmark': settings.OPENKM['configuration']['Host'] + '%s/OKMBookmark?wsdl' % PATH,
+    'Document': settings.OPENKM['configuration']['Host'] + '%s/OKMDocument?wsdl' % PATH,
+    'Search': settings.OPENKM['configuration']['Host'] + '%s/OKMSearch?wsdl' % PATH,
+    'Note': settings.OPENKM['configuration']['Host'] + '%s/OKMNote?wsdl' % PATH,
+    'Folder': settings.OPENKM['configuration']['Host'] + '%s/OKMFolder?wsdl' % PATH,
+    'Property': settings.OPENKM['configuration']['Host'] + '%s/OKMProperty?wsdl' % PATH,
+    'PropertyGroup': settings.OPENKM['configuration']['Host'] + '%s/OKMPropertyGroup?wsdl' % PATH,
+    'Repository': settings.OPENKM['configuration']['Host'] + '%s/OKMRepository?wsdl' % PATH,
     }
 
 def try_except(fn):
@@ -66,7 +68,7 @@ class Auth(BaseService):
     def __init__(self):
         super(Auth, self).__init__(start_session=False)
 
-    def login(self, user=settings.OPENKM['User'], password=settings.OPENKM['Password']):
+    def login(self, user=settings.OPENKM['configuration']['User'], password=settings.OPENKM['configuration']['Password']):
         self.token = self.service.login(user=user, password=password)
 
     def logout(self):

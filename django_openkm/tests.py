@@ -16,7 +16,7 @@ class ClientTest(TestCase):
         """ Check that the config values are set in the settings file """
         keys = ('Logging', 'UploadRoot', 'Host', 'User', 'Password')
         for key in keys:
-            self.assertTrue(settings.OPENKM.has_key(key))
+            self.assertTrue(settings.OPENKM['configuration'].has_key(key))
             
     def test_wsdl_map(self):
         """ Check fof the presence of the WSDL dict map """
@@ -86,7 +86,7 @@ class AuthTest(TestCase):
 
 class DocumentTest(TestCase):
     
-    test_doc_path = '%s%s' % (settings.OPENKM['UploadRoot'], 'testing123.pdf')
+    test_doc_path = '%s%s' % (settings.OPENKM['configuration']['UploadRoot'], 'testing123.pdf')
     
     def setUp(self):
         """
@@ -133,7 +133,7 @@ class DocumentTest(TestCase):
         """ Create a test document """
         test_doc = self.doc.new()
         filename = 'abc.pdf'
-        test_doc.path = '%s%s' % (settings.OPENKM['UploadRoot'], filename)
+        test_doc.path = '%s%s' % (settings.OPENKM['configuration']['UploadRoot'], filename)
         content = "hf8478y7ro48y7y7t4y78o4"
         self.doc.create(test_doc, content)
         new_document = self.doc.get_properties(test_doc.path)
@@ -208,7 +208,7 @@ class PropertyGroupTest(TestCase):
         delete_test_document_on_openkm()
 
 def get_test_document_path():
-    return '%snotes.pdf' % settings.OPENKM['UploadRoot']
+    return '%snotes.pdf' % settings.OPENKM['configuration']['UploadRoot']
 
 def create_test_document_on_openkm():
     document = Document()
@@ -282,7 +282,7 @@ class KeywordTest(TestCase):
     def tearDown(self):
         delete_test_document_on_openkm()
 
-if settings.OPENKM['tagging']:
+if settings.OPENKM['configuration']['tagging']:
     class SyncKeywordsTest(TestCase):
 
         def setUp(self):

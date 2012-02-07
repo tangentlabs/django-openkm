@@ -35,5 +35,35 @@ def find_key(dic, val):
     """return the key of dictionary dic given the value"""
     return [k for k, v in dic.iteritems() if v == val][0]
 
+def get_category_from_path(path):
+    """
+    Document.get_properties returns Category path and uuid information, so doing this
+    saves us making a second webservice call
+    :param path: string
+    :return list
+    """
+    parts = path.split('/')
+    if 'categories' not in parts[1]:
+        return []
+    else:
+        return parts[2:]
+
+def replace_dict_key(dict, old_key, new_key):
+    """
+    Renames a dictionary key, keeping the value intact, by creating a new key with the original value
+    and then deleting the old { key : value }
+    """
+    dict[new_key] = dict[old_key]
+    del dict[old_key]
+    return dict
+
+def import_class(module_path, class_name):
+    """
+    Dynamically imports a class
+    :module_path string: e.g. 'my_package.my_module'
+    :fromlist string: the class name
+    """
+    mod = __import__(module_path, fromlist=[class_name])
+    return getattr(mod, class_name)
 
 

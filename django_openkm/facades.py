@@ -119,7 +119,7 @@ class DirectoryListing(object):
         self.folder = client.Folder()
 
     def get_root_path(self):
-        return settings.OPENKM['UploadRoot']
+        return settings.OPENKM['configuration']['UploadRoot']
 
     def traverse(self, path=None):
         """
@@ -165,8 +165,9 @@ class DirectoryListing(object):
             pass
         return self.folders
 
-    def get_all_documents_in_folder(self, folder_path=settings.OPENKM['UploadRoot']):
+    def get_all_documents_in_folder(self, folder_path=settings.OPENKM['configuration']['UploadRoot']):
         return self.doc.get_children(folder_path)
+
 
 class DocumentManager(object):
 
@@ -180,7 +181,7 @@ class DocumentManager(object):
         return self.create_document_on_openkm(document, content)
 
     def create_path_from_filename(self, file_obj):
-        return settings.OPENKM['UploadRoot'] + file_obj.__str__()
+        return settings.OPENKM['configuration']['UploadRoot'] + file_obj.__str__()
 
     def convert_file_content_to_binary_for_transport(self, file_obj):
         return make_file_java_byte_array_compatible(file_obj)
@@ -214,8 +215,8 @@ class Property(object):
         :new_values: dictionary of the form { label : value }
         """
         for property in properties[0]:
-            #logging.info('property.name: %s', property.name)
             if hasattr(property, 'label') and property.name in new_values.keys():
+                logging.info('Found %s to %s' % (property.name, new_values[property.name]))
                 if hasattr(property, 'options'):
                     try:
                         property.options = self.update_options_list(property.options, new_values)
