@@ -6,10 +6,14 @@ you can extend its abstract models to delegate the storage, search and retrieval
 
 Features:
 
-1. Category construction.  Categories correspond to your Document's many-to-many fields.  These can be dynamically created
-on OpenKM based on the data currently stored by your application.
-2. Keyword syncing.  OpenKM keywords correspond to the tags provided by django-tagging.  These tags can by synced on a
-per document basis allowing you to make use of OpenKM's keyword cloud and search functionality.
+
+*Category construction*  
+        Categories correspond to your Document's many-to-many fields.  These can be dynamically created
+        on OpenKM based on the data currently stored by your application.
+
+*Keyword syncronisation*  
+        OpenKM keywords correspond to the tags provided by django-tagging.  These tags can by synced on a
+        per document basis allowing you to make use of OpenKM's keyword cloud and search functionality.
 
 Categories
 ==========
