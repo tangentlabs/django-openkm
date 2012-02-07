@@ -182,7 +182,7 @@ class SyncProperties(object):
             self.property_group.set_properties(resource.okm_path, property_group, updated_properties)
 
     def openkm_to_django(self, resource):
-        self.PROPERTY_GROUP_MAP = self.reverse_mapping()
+        self.PROPERTY_GROUP_MAP = settings.OPENKM['properties']
 
         document_property_groups = self.property.get_property_groups_for_document(resource.okm_path)
 
@@ -194,26 +194,27 @@ class SyncProperties(object):
     def set_attributes(self, property_map, document_properties, resource):
         for document_property in document_properties:
             if property_map.get(document_property.name, None):
-                # the property exists in the map
-                name = property_map.get(document_property.name, None)
-                if not isinstance(name, tuple):
-                    # this is a normal text attribute so save it
-                    setattr(resource, name, document_property.value)
-                else:
-                    # this is a Django 'choice' so lookup if required
-                    name, choices = name
+                logging.info('Found property: %s', document_property.name)
+                meta = property_map.get(document_property.name, None)
+                if 'choices' in meta:
                     option = self.get_option(document_property.options)
-                    if choices:
-                        value = utils.find_key(dict(choices), option)
-                        setattr(resource, name, value)
-                    else:
-                        setattr(resource, name, option)
+                    if option and meta['choices']:
+                        value = utils.find_key(dict(meta['choices']), option.label)
+                        setattr(resource, meta['attribute'], value)
+                        logging.info('Updated %s : %s' % (meta['attribute'], option.label))
+                    elif option and not meta['choices']:
+                        setattr(resource, meta['attribute'], option.value)
+                        logging.info('Updated %s : %s' % (meta['attribute'], option.value))
+                else:
+                    setattr(resource, meta['attribute'], document_property.value)
+                    logging.info('Updated %s : %s' % (meta['attribute'], document_property.value))
+
         resource.save()
 
     def get_option(self, options):
         for option in options:
             if option.selected:
-                return option.label
+                return option
 
     """
     @todo The two functions below violate the DRY principle and need to be merged into a single dictionary

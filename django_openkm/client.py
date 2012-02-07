@@ -10,8 +10,6 @@ import exceptions
 
 logging.getLogger('suds.client').setLevel(logging.INFO)
 
-import ipdb; ipdb.set_trace()
-
 PATH = settings.OPENKM['configuration']['Path']
 
 OPENKM_WSDLS = {
