@@ -12,7 +12,7 @@ class OpenKmMetadata(models.Model):
     An abstract class which contains the template to store OpenKM metadata
     """
     okm_author = models.CharField(max_length=255, blank=True, null=True)
-    okm_created = models.DateTimeField(default=datetime.datetime.now, blank=True, null=True)
+    okm_created = models.DateTimeField(auto_now_add=True)
     okm_path = models.CharField(max_length=255, blank=True, null=True)
     okm_permissions = models.CharField(max_length=255, blank=True, null=True)
     okm_subscribed = models.CharField(max_length=255, blank=True, null=True)
@@ -36,8 +36,12 @@ class OpenKmFolderListManager(models.Manager):
         or_list = [Q(x) for x in or_predicates_list]
 
         query_set = super(OpenKmFolderListManager, self).get_query_set()
-        query_set = query_set.filter(reduce(operator.and_, and_list) and reduce(operator.or_, or_list))
-        return [resource.okm_uuid for resource in query_set]
+        try:
+            query_set = query_set.filter(reduce(operator.and_, and_list) and reduce(operator.or_, or_list))
+            return [resource.okm_uuid for resource in query_set]
+        except TypeError, e:
+            logging.exception(e)
+            return []
 
     def _build_predicate_list(self, arguments):
         return [('okm_path__icontains', argument) for argument in arguments]

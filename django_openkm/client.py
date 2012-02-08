@@ -51,11 +51,14 @@ def get_token():
     auth.login()
     return auth.token
 
+
 class BaseService(object):
 
-    def __init__(self, start_session=True):
-        self.service = get_service(self.__class__.__name__)
-        self.client = get_client(self.__class__.__name__)
+    def __init__(self, start_session=True, class_name=None):
+        if not class_name:
+            class_name = self.__class__.__name__
+        self.service = get_service(class_name)
+        self.client = get_client(class_name)
         if start_session:
             self.token = get_token()
 

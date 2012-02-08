@@ -33,3 +33,10 @@ document.  (Note: This would be much more efficient as bulk operation, but I am 
 uuids via OpenKM webservices so far)
 
 
+Client and Facades
+==================
+
+The client library is the one-to-one mapping with the OpenKM web services API.  You may access this directly if
+required, however for many common tasks it may be more convienient to use the Facades.
+
+

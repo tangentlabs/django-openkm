@@ -195,8 +195,10 @@ class DocumentManager(object):
     def get_properties(self, doc_path):
         return self.document.get_properties(doc_path)
 
-class RepositoryManager(object):
-    pass
+class RepositoryManager(client.Repository):
+
+    def __init__(self):
+        super(RepositoryManager, self).__init__(class_name='Repository')
 
 class Property(object):
 
