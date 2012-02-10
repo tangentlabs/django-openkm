@@ -2,8 +2,8 @@ import logging
 
 from django.conf import settings
 
-import client
-from .utils import make_file_java_byte_array_compatible
+import client, utils
+
 
 class Session(object):
 
@@ -216,7 +216,7 @@ class DocumentManager(object):
         return "%s%s" % (settings.OPENKM['configuration']['UploadRoot'], filename)
 
     def convert_file_content_to_binary_for_transport(self, file_obj):
-        return make_file_java_byte_array_compatible(file_obj)
+        return utils.make_file_java_byte_array_compatible(file_obj)
 
     def create_document_on_openkm(self, document, content):
         return self.document.create(document, content)
