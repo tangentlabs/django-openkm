@@ -86,6 +86,10 @@ class FileSystem(object):
     """
     File system related functionality
     """
+    DISALLOWED_CHAR_MAP = (
+        ('/', '--'),
+    )
+
     def get_node_from_path(self, path):
         """ Returns the file name or folder name from a given path """
         return path.split("/")[-1]
@@ -108,6 +112,31 @@ class FileSystem(object):
     def get_file_name_from_path(self, path):
         return path.split('/').pop()
 
+    def normalise_string_for_openkm(self, str):
+        """
+        Replaces non-allowed characters in path names with substitues so that they will be compatible with OpenKM
+        """
+        for map in self.DISALLOWED_CHAR_MAP:
+            str = str.replace(map[0],map[1])
+        return str
+
+    def denormalise_openkm_string(self, path):
+        """
+        Replaces the substitute chars added to path names in self.normalise_django_path() so that they map back to
+        Django fields
+        """
+        for map in self.DISALLOWED_CHAR_MAP:
+            path = path.replace(map[1],map[0])
+        return path
+
+class FolderManager(client.Folder):
+
+    def __init__(self):
+        super(FolderManager, self).__init__(class_name='Folder')
+
+    def create(self, folder_obj):
+        folder_obj.path = utils.remove_trailing_slash(folder_obj.path)
+        super(FolderManager, self).create(folder_obj)
 
 class DirectoryListing(object):
 
@@ -181,7 +210,10 @@ class DocumentManager(object):
         return self.create_document_on_openkm(document, content)
 
     def create_path_from_filename(self, file_obj):
-        return settings.OPENKM['configuration']['UploadRoot'] + file_obj.__str__()
+        file_system = FileSystem()
+        filename = file_system.get_file_name_from_path()
+        logging.debug("Derived filename: %s", filename)
+        return "%s%s" % (settings.OPENKM['configuration']['UploadRoot'], filename)
 
     def convert_file_content_to_binary_for_transport(self, file_obj):
         return make_file_java_byte_array_compatible(file_obj)
@@ -246,3 +278,82 @@ class Property(object):
 
 
 
+class SearchManager(client.Search):
+    def __init__(self):
+        super(SearchManager, self).__init__(class_name='Search')
+
+
+class Taxonomy(object):
+    """
+    Creates a directory structure for the given Taxonomy
+
+        /okm:root/Uploads/[region]/[year]/Team/
+
+    """
+    def __init__(self):
+        # Remove the leading forward slash if present
+        self.root_path = utils.remove_trailing_slash(settings.OPENKM['configuration']['UploadRoot'])
+        self.repository = RepositoryManager()
+        self.folder = FolderManager()
+
+    def generate_path(self, folders=None):
+        """
+        Builds string representing a folder path using the UploadRoot as the base path
+        Example:
+        folders =  ['EMEA', '2012', 'Team']
+        returns '/okm:root/Uploads/EMEA/2012/Team/'
+        :param folders: a list or tuple of strings, each element being a subfolder of upload root
+        :returns path: string
+        """
+        path = [self.root_path]
+
+        if isinstance(folders, list):
+            for folder in folders:
+                path.append(folder)
+            return '/'.join(path) + '/'
+        else:
+            return self.root_path + '/' + folders + '/'
+
+
+    def generate_path_dependencies(self, folders):
+        """
+        :returns a list of strings.  each string being a dependency for a path
+
+            ['/okm:root/Uploads',
+             '/okm:root/Uploads/EMEA',
+             '/okm:root/Uploads/EMEA/2012',
+             '/okm:root/Uploads/EMEA/2012/General']
+        """
+        if not isinstance(folders, list):
+            raise Exception('folders param must be a list')
+
+        dependencies = []
+
+        i = 0
+        while i <= len(folders):
+            if i == 0:
+                # first iteration so generate the full path
+                dependencies.append(self.generate_path(folders))
+            else:
+                # generate path[n - 1] each iteration
+                dependencies.append(self.generate_path(folders[:-i]))
+            i = i + 1
+
+        return dependencies
+
+    def build_path(self, dependencies):
+        """
+        :param dependencies: list. a list of folder paths which must exist.  If the folders do not
+        exist, they will be created
+        :returns boolean: True when path has been created
+        """
+        if self.repository.has_node(dependencies[0]):
+            return True
+
+        folders_to_create = [dependency for dependency in dependencies if not self.repository.has_node(dependency)]
+        folders_to_create.reverse()
+
+        for path in folders_to_create:
+            okm_folder = self.folder.new()
+            okm_folder.path = path
+            self.folder.create(okm_folder)

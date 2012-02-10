@@ -5,6 +5,7 @@ from .client import Auth, Document, Folder, Note, OPENKM_WSDLS, Repository, Prop
 from .facades import Keyword, Category, DirectoryListing
 from .sync import SyncKeywords, SyncCategories, SyncFolderList
 from .models import OpenKmDocument, OpenKmFolderList
+import facades
 
 class ClientTest(TestCase):
     """ Tests of functions and settings """
@@ -534,4 +535,34 @@ class SyncFolderListTest(TestCase):
         self.assertTrue(isinstance(paths, list), msg="Expected return value to be a list")
 
 
+class FileSystemTest(TestCase):
 
+    def setUp(self):
+        self.file_system = facades.FileSystem()
+        self.django_str = 'Regions / Areas'
+        self.openkm_str = 'Regions -- Areas'
+
+    def test_normalise_django_path(self):
+        openkm_normalised = self.file_system.normalise_string_for_openkm(self.django_str)
+        self.assertEqual(openkm_normalised, self.openkm_str, msg="%s not as expected %s" % (openkm_normalised, self.openkm_str))
+
+    def test_denormalise_openkm_path(self):
+        denormalised = self.file_system.denormalise_openkm_string(self.openkm_str)
+        self.assertEqual(denormalised, self.django_str, msg="%s not as expected %s" % (denormalised, self.openkm_str))
+
+
+class TaxonomyTest(TestCase):
+
+    def setUp(self):
+        self.taxonomy = facades.Taxonomy()
+        self.folders = ['EMEA', '2012', 'Team']
+
+    def test_generate_path(self):
+        self.taxonomy.generate_path(self.folders)
+
+    def test_generate_path_dependencies(self):
+        self.taxonomy.generate_path_dependencies(self.folders)
+
+    def test_build_path(self):
+        dependencies = self.taxonomy.generate_path_dependencies(self.folders)
+        self.taxonomy.build_path(dependencies)

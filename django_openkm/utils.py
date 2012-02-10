@@ -71,4 +71,11 @@ def import_class(module_path, class_name):
     mod = __import__(module_path, fromlist=[class_name])
     return getattr(mod, class_name)
 
+def remove_trailing_slash(str):
+    # Remove the leading forward slash if present
+    if str[-1] is '/':
+        return str[:-1]
+    else:
+        return str
+
 
