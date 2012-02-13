@@ -73,7 +73,7 @@ def import_class(module_path, class_name):
 
 def remove_trailing_slash(str):
     # Remove the leading forward slash if present
-    if str[-1] is '/':
+    if str[-1] == '/':
         return str[:-1]
     else:
         return str

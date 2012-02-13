@@ -203,9 +203,17 @@ class DocumentManager(object):
     def __init__(self):
         self.document = client.Document()
 
-    def create(self, file_obj):
+    def create(self, file_obj, taxonomy=[]):
         document = self.document.new()
-        document.path = self.create_path_from_filename(file_obj)
+
+        if taxonomy:
+            # build the taxonomy
+            tax = Taxonomy(taxonomy)
+            document.path = tax.generate_path(taxonomy) + file_obj.name.split('/')[-1]
+        else:
+            # just create the path
+            document.path = self.create_path_from_filename(file_obj)
+
         content = self.convert_file_content_to_binary_for_transport(file_obj)
         return self.create_document_on_openkm(document, content)
 
@@ -253,18 +261,19 @@ class Property(object):
                 logging.info('Found %s to %s' % (property.name, new_values[property.name]))
                 if hasattr(property, 'options'):
                     try:
-                        property.options = self.update_options_list(property.options, new_values)
+                        property.options = self.update_options_list(property.options, new_values[property.name]['value'])
                     except KeyError, e:
                         logging.exception(e)
                 else:
                     logging.info('Updating %s to %s' % (property.name, new_values[property.name]))
-                    property.value = new_values[property.name]
+                    property.value = new_values[property.name]['value']
 
         return properties
 
-    def update_options_list(self, options, new_values):
+    def update_options_list(self, options, new_value):
+       import ipdb; ipdb.set_trace()
        for option in options:
-           if option.label in new_values.values():
+           if option.label == new_value:
                option.selected = True
                logging.info('Updating option[%s].selected to True', option.label)
            else:
@@ -290,11 +299,14 @@ class Taxonomy(object):
         /okm:root/Uploads/[region]/[year]/Team/
 
     """
-    def __init__(self):
+    def __init__(self, folders=[]):
         # Remove the leading forward slash if present
         self.root_path = utils.remove_trailing_slash(settings.OPENKM['configuration']['UploadRoot'])
         self.repository = RepositoryManager()
         self.folder = FolderManager()
+        if folders:
+            dependencies = self.generate_path_dependencies(folders)
+            self.build_path(dependencies)
 
     def generate_path(self, folders=None):
         """
@@ -312,6 +324,7 @@ class Taxonomy(object):
                 path.append(folder)
             return '/'.join(path) + '/'
         else:
+#            import ipdb; ipdb.set_trace()
             return self.root_path + '/' + folders + '/'
 
 
@@ -357,3 +370,4 @@ class Taxonomy(object):
             okm_folder = self.folder.new()
             okm_folder.path = path
             self.folder.create(okm_folder)
+            logging.info('Created folder path: %s', path)

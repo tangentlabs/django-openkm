@@ -76,8 +76,11 @@ class OpenKmDocument(OpenKmMetadata):
             """ A new resource to be uploaded OpenKM """
             try:
                 file_obj = self.file._get_file()
-                openkm_document = self.upload_to_openkm(file_obj)
-                import pdb; pdb.set_trace()
+
+                if 'taxonomy' in kwargs:
+                    openkm_document = self.upload_to_openkm(file_obj, taxonomy)
+                else:
+                    openkm_document = self.upload_to_openkm(file_obj)
 
                 if openkm_document:
                     self.set_model_fields(openkm_document)
@@ -90,10 +93,10 @@ class OpenKmDocument(OpenKmMetadata):
 
         super(OpenKmDocument, self).save(*args, **kwargs)
 
-    def upload_to_openkm(self, file_obj):
+    def upload_to_openkm(self, file_obj, taxonomy=[]):
         """Uploads the document to the OpenKM server """
         document_manager = DocumentManager()
-        return document_manager.create(file_obj)
+        return document_manager.create(file_obj, taxonomy=taxonomy)
 
     def set_model_fields(self, openkm_document):
         """

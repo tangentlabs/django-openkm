@@ -1,5 +1,6 @@
 from django.conf import settings
 import utils
+import logging
 
 class Settings:
     """
@@ -7,7 +8,6 @@ class Settings:
     This class runs once to update the settings and does not need to be instantiated by client code
     """
     def __init__(self):
-        # ensure we only do this once
         if not hasattr(self, 'openkm'):
             self.__categories()
             self.__properties()

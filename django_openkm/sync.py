@@ -119,7 +119,7 @@ class SyncCategories(object):
         for object in objects:
             try:
                 self.category.create('/okm:categories/%s/%s' % (category_name,\
-                                                                object.__unicode__().replace('/','')))
+                                                                object.__unicode__().replace('/','--')))
             except:
                 logging.info("%s creation failed" % object.__unicode__().replace('/',''))
 
@@ -166,8 +166,7 @@ class SyncProperties(object):
         self.property_group = PropertyGroup()
 
     def django_to_openkm(self, resource):
-        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(resource)
-        logging.info(self.PROPERTY_GROUP_MAP)
+        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(settings.OPENKM['properties'], resource)
 
         for property_group in self.PROPERTY_GROUP_MAP:
             logging.debug("property_group: %s", property_group)
@@ -183,7 +182,6 @@ class SyncProperties(object):
 
     def openkm_to_django(self, resource):
         self.PROPERTY_GROUP_MAP = settings.OPENKM['properties']
-
         document_property_groups = self.property.get_property_groups_for_document(resource.okm_path)
 
         for property_group in document_property_groups[0]:
@@ -216,32 +214,16 @@ class SyncProperties(object):
             if option.selected:
                 return option
 
-    """
-    @todo The two functions below violate the DRY principle and need to be merged into a single dictionary
-    """
-    def populate_property_group_map(self, resource):
-        return {
-            "okg:customProperties": {
-                "okp:customProperties.title": resource.name,
-                'okp:customProperties.description': resource.description,
-                'okp:customProperties.languages': resource.language,
-                },
-            "okg:salesProperties": {
-                'okp:salesProperties.assetType': resource.get_type_display(),
-                }
-        }
-
-    def reverse_mapping(self):
-        return {
-            "okg:customProperties": {
-                "okp:customProperties.title": 'name',
-                'okp:customProperties.description': 'description',
-                'okp:customProperties.languages': ('language', None)
-                },
-            "okg:salesProperties": {
-                'okp:salesProperties.assetType': ('type', RESOURCE_TYPES),
-                }
-        }
+    def populate_property_group_map(self, map, resource):
+        """
+        Updates the settings dict with values.
+        @todo this restricts the settings. abstract to more generic
+        """
+        map['okg:customProperties']['okp:customProperties.title'].update({'value': resource.name})
+        map['okg:customProperties']['okp:customProperties.description'].update({'value': resource.description})
+        map['okg:customProperties']['okp:customProperties.languages'].update({'value': resource.language})
+        map['okg:salesProperties']['okp:salesProperties.assetType'].update({'value': resource.get_type_display()})
+        return map
 
 
 class SyncFolderList(object):
