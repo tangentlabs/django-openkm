@@ -1,11 +1,12 @@
 import datetime
 import operator
 import logging
+
 from django.db import models
 from django.conf import settings
 from django.db.models import Q
 
-from .facades import DocumentManager, FileSystem
+import facades
 
 class OpenKmMetadata(models.Model):
     """
@@ -40,6 +41,9 @@ class OpenKmFolderListManager(models.Manager):
             query_set = query_set.filter(reduce(operator.and_, and_list) and reduce(operator.or_, or_list))
             return [resource.okm_uuid for resource in query_set]
         except TypeError, e:
+            logging.exception(e)
+            return []
+        except AttributeError, e:
             logging.exception(e)
             return []
 
@@ -95,7 +99,7 @@ class OpenKmDocument(OpenKmMetadata):
 
     def upload_to_openkm(self, file_obj, taxonomy=[]):
         """Uploads the document to the OpenKM server """
-        document_manager = DocumentManager()
+        document_manager = facades.DocumentManager()
         return document_manager.create(file_obj, taxonomy=taxonomy)
 
     def set_model_fields(self, openkm_document):
@@ -110,7 +114,7 @@ class OpenKmDocument(OpenKmMetadata):
         self.okm_subscribed = openkm_document.subscribed
         self.okm_uuid = openkm_document.uuid
 
-        file_system = FileSystem()
+        file_system = facades.FileSystem()
         self.okm_filename = file_system.get_file_name_from_path(openkm_document.path)
 
     def __unicode__(self):
@@ -120,6 +124,9 @@ class OpenKmDocument(OpenKmMetadata):
         abstract = True
         verbose_name = 'OpenKM Document'
         verbose_name_plural = 'OpenKM Documents'
+
+class TestOpenKmDocument(OpenKmDocument):
+    pass
 
 
 

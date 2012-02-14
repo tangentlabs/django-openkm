@@ -3,8 +3,8 @@ from functools import wraps
 
 from django.conf import settings
 
-from suds.client import Client
 from suds import WebFault
+from suds.client import Client
 
 import exceptions
 

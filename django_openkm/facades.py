@@ -219,7 +219,7 @@ class DocumentManager(object):
 
     def create_path_from_filename(self, file_obj):
         file_system = FileSystem()
-        filename = file_system.get_file_name_from_path()
+        filename = file_system.get_file_name_from_path(file_obj.__str__())
         logging.debug("Derived filename: %s", filename)
         return "%s%s" % (settings.OPENKM['configuration']['UploadRoot'], filename)
 
@@ -271,7 +271,6 @@ class Property(object):
         return properties
 
     def update_options_list(self, options, new_value):
-       import ipdb; ipdb.set_trace()
        for option in options:
            if option.label == new_value:
                option.selected = True
@@ -324,7 +323,6 @@ class Taxonomy(object):
                 path.append(folder)
             return '/'.join(path) + '/'
         else:
-#            import ipdb; ipdb.set_trace()
             return self.root_path + '/' + folders + '/'
 
 

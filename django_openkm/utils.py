@@ -33,7 +33,6 @@ def java_byte_array_to_binary(file_obj):
 
 def find_key(dic, val):
     """return the key of dictionary dic given the value"""
-#    import ipdb; ipdb.set_trace()
     key = [k for k, v in dic.iteritems() if v == val]
     if len(key) > 0:
         return key[0]

@@ -1,49 +1,45 @@
 from django.test import TestCase
 from django.conf import settings
 
-from .client import Auth, Document, Folder, Note, OPENKM_WSDLS, Repository, PropertyGroup
-from .facades import Keyword, Category, DirectoryListing
-from .sync import SyncKeywords, SyncCategories, SyncFolderList
-from .models import OpenKmDocument, OpenKmFolderList
-import facades
+import client, facades, models, sync
 
 class ClientTest(TestCase):
     """ Tests of functions and settings """
-    
+
     def setUp(self):
         pass
-    
+
     def test_settings(self):
         """ Check that the config values are set in the settings file """
         keys = ('Logging', 'UploadRoot', 'Host', 'User', 'Password')
         for key in keys:
             self.assertTrue(settings.OPENKM['configuration'].has_key(key))
-            
+
     def test_wsdl_map(self):
         """ Check fof the presence of the WSDL dict map """
-        self.assertTrue(isinstance(OPENKM_WSDLS, dict))
+        self.assertTrue(isinstance(client.OPENKM_WSDLS, dict))
 
 
 class FolderTest(TestCase):
-    
+
     def setUp(self):
-        self.folder = Folder()
+        self.folder = client.Folder()
 
     def test_get_children(self):
         children = self.folder.get_children('/okm:root/')
         self.assertTrue(hasattr(children, 'item'))
 
 class AuthTest(TestCase):
-    
+
     def setUp(self):
-        self.auth = Auth()
-        
+        self.auth = client.Auth()
+
     def test_login(self):
         """ Check we can login and get a token """
         self.auth.login()
         self.assertTrue(hasattr(self.auth, 'token'), msg="Token has not been set")
         self.assertTrue(len(self.auth.token) > 1, msg="Token is empty")
-        
+
     def test_logout(self):
         """ A successful logout should destroy the session token """
         self.auth.login()
@@ -51,6 +47,7 @@ class AuthTest(TestCase):
         self.auth.logout()
 
         try:
+            # this should fail as now logged out
             has_token = hasattr(object, 'token')
         except AttributeError:
             has_token = False
@@ -65,61 +62,51 @@ class AuthTest(TestCase):
         roles = self.auth.get_roles()
         self.assertTrue(hasattr(roles, 'item'), msg="instance expected to contain item[]")
         self.assertTrue(isinstance(roles.item, list), msg="role.item expected to be a list")
-    
+
     def test_grant_role(self):
         pass
-    
+
     def test_revoke_role(self):
         pass
-    
+
     def test_get_users(self):
         pass
-    
+
     def test_grant_user(self):
         pass
-    
+
     def test_revoke_user(self):
         pass
-    
+
     def test_get_granted_users(self):
         pass
-    
+
 
 class DocumentTest(TestCase):
-    
-    test_doc_path = '%s%s' % (settings.OPENKM['configuration']['UploadRoot'], 'testing123.pdf')
-    
-    def setUp(self):
-        """
-        Login to OpenKM, get the session token and use it to instantiate
-        a Document object
-        """
-        self.test_doc = 'xxxx'
-        try:
-            self.auth = Auth()
-            self.auth.login()
 
-            self.doc = Document()
-            
+    test_doc_path = '%s%s' % (settings.OPENKM['configuration']['UploadRoot'], 'testing123.pdf')
+
+    def setUp(self):
+        try:
             # create a test document
+            self.doc = client.Document()
             test_doc = self.doc.new()
             test_doc.path = self.test_doc_path
             self.doc.create(test_doc, "hf7438hf7843h378ot4837ht7")
             self.test_doc = self.doc.get_properties(self.test_doc_path)
         except AssertionError, detail:
-            print detail
-        
+            logging.exception(detail)
+
     def test_token_has_been_set(self):
         """
         Check that the token has been set in both Auth and Document,
         otherwise we won't be doing anything
         """
-        self.assertTrue(hasattr(self.auth, 'token'), msg="Token not set in Auth")
         self.assertTrue(hasattr(self.doc, 'token'), msg="Token not set in Document")
-        
+
     def document_object(self, doc):
-        """ 
-        Test the structure of a document instance 
+        """
+        Test the structure of a document instance
         """
         keys = ('actualVersion', 'author', 'checkedOut', 'convertibleToDxf',
                 'convertibleToPdf', 'convertibleToSwf', 'created', 'language', 'lastModified',
@@ -129,7 +116,7 @@ class DocumentTest(TestCase):
             self.assertTrue(hasattr(doc, key), msg)
 
         return True
-            
+
     def test_create(self):
         """ Create a test document """
         test_doc = self.doc.new()
@@ -138,22 +125,22 @@ class DocumentTest(TestCase):
         content = "hf8478y7ro48y7y7t4y78o4"
         self.doc.create(test_doc, content)
         new_document = self.doc.get_properties(test_doc.path)
-        
+
         self.assertEqual(test_doc.path, new_document.path, msg="Created document path does not match that uploaded")
-        
+
         # clean up the file, otherwise it will remain on OpenKM causing the next test run to fail
         self.doc.delete(new_document.path)
-        
+
     def test_lock(self):
         """ Lock and unlock a document """
         self.doc.lock(self.test_doc.path)
         properties = self.doc.get_properties(self.test_doc_path)
         self.assertTrue(properties.locked, msg="Document is not locked")
-        
+
         self.doc.unlock(self.test_doc.path)
         properties = self.doc.get_properties(self.test_doc_path)
         self.assertFalse(properties.locked, msg="Document is locked")
-        
+
     def test_get_properties(self):
         """ Get the properites of a document and check the attributes """
         d = self.doc.get_properties(self.test_doc.path)
@@ -162,7 +149,6 @@ class DocumentTest(TestCase):
 
     def tearDown(self):
         self.doc.delete(self.test_doc_path)
-        self.auth.logout()
 
 class PropertyTest(TestCase):
     pass
@@ -171,8 +157,8 @@ class PropertyGroupTest(TestCase):
 
     def setUp(self):
         self.test_document = create_test_document_on_openkm()
-        self.property_group = PropertyGroup()
-        self.document = Document()
+        self.property_group = client.PropertyGroup()
+        self.document = client.Document()
         self.new_group = 'okg:customProperties'
 
     def test_add_and_remove_group(self):
@@ -212,33 +198,31 @@ def get_test_document_path():
     return '%snotes.pdf' % settings.OPENKM['configuration']['UploadRoot']
 
 def create_test_document_on_openkm():
-    document = Document()
+    document = client.Document()
     test_doc = document.new()
     test_doc.path = get_test_document_path()
     document.create(test_doc, "hf7438hf7843h378ot4837ht7")
     return document.get_properties(test_doc.path)
 
 def delete_test_document_on_openkm():
-    d = Document()
+    d = client.Document()
     d.delete(get_test_document_path())
 
 class NoteTest(TestCase):
-    
+
     def setUp(self):
-        self.document = Document()
-        self.note = Note()
-        self.auth = Auth()
-        self.auth.login()
+        self.document = client.Document()
+        self.note = client.Note()
         self.test_document = create_test_document_on_openkm()
 
     def test_add_and_remove(self):
         # add a note
         text = 'hello, this is a note'
         meta = self.note.add(self.test_document.path, text)
-        
+
         # remove it
         self.note.remove(meta.path)
-        
+
     def test_get_list(self):
         """
         Add some notes to a document and retrieve them
@@ -247,81 +231,84 @@ class NoteTest(TestCase):
         notes = ('one', 'two', 'three')
         for note in notes:
             self.note.add(self.test_document.path, note)
-        
+
         # test that the notes returned match those added
-        list = self.note.list('/okm:root/gsa/notes.pdf')
+        list = self.note.list(self.test_document.path)
         for entered, note in zip(notes, list.item):
             self.assertEqual(entered, note.text)
             self.note.remove(note.path)
-            
+
     def test_get(self):
         text = 'Knock, knock...'
         note = self.note.add(self.test_document.path, text)
         note_meta = self.note.get(note.path)
         self.assertEqual(note_meta.text, text, msg='Returned note does not match')
         self.note.remove(note_meta.path)
-        
+
     def tearDown(self):
         delete_test_document_on_openkm()
 
-KEYWORDS = ('One', 'Two', 'Three', 'Hammertime!')
+
 
 class KeywordTest(TestCase):
 
+    KEYWORDS = ('One', 'Two', 'Three', 'Hammertime!')
+
     def setUp(self):
-        self.keyword = Keyword()
+        self.keyword = facades.Keyword()
         self.test_document = create_test_document_on_openkm()
 
     def test_add(self):
-        for keyword in KEYWORDS:
+        for keyword in self.KEYWORDS:
             self.keyword.add(self.test_document.path, keyword)
 
     def test_remove(self):
-        for keyword in KEYWORDS:
+        for keyword in self.KEYWORDS:
             self.keyword.remove(self.test_document.path, keyword)
-            
+
     def tearDown(self):
         delete_test_document_on_openkm()
 
-if settings.OPENKM['configuration']['tagging']:
-    class SyncKeywordsTest(TestCase):
 
-        def setUp(self):
-            self.resource = OpenKmDocument()
-            self.resource.tag_set = u'One, Two, Three'
-            self.sync_keywords = SyncKeywords()
-            self.path = '/okm:root/test-global.html'
-            self.tags = self.sync_keywords.get_tags_from_resource(self.resource)
+class SyncKeywordsTest(TestCase):
 
-        def test_get_tags_from_resource(self):
-            """
-            Should take a a comma separated string of tags and return a list
-            """
-            self.assertTrue(isinstance(self.tags, list), msg="Tags should be returned as a list")
+    def setUp(self):
+        self.document = models.OpenKmDocument()
+        self.document.tag_set = u'One, Two, Three'
+        self.sync_keywords = sync.SyncKeywords()
+        self.test_document = create_test_document_on_openkm()
+        self.path = self.test_document.path
+        self.tags = self.sync_keywords.get_tags_from_document(self.document)
 
-        def test_tags_are_unicode(self):
-            tags = self.sync_keywords.get_tags_from_resource(self.resource)
-            for tag in tags:
-                self.assertTrue(isinstance(tag, unicode), msg="%s is not a string, it is %s" % (tag, type(tag)))
+    def test_get_tags_from_resource(self):
+        """
+        Should take a a comma separated string of tags and return a list
+        """
+        self.assertTrue(isinstance(self.tags, list), msg="Tags should be returned as a list")
 
-        def test_add_keyword_to_openkm_document(self):
-            self.sync_keywords.add_keyword_to_openkm_document(self.path, 'Example')
+    def test_tags_are_unicode(self):
+        tags = self.sync_keywords.get_tags_from_document(self.document)
+        for tag in tags:
+            self.assertTrue(isinstance(tag, unicode), msg="%s is not a string, it is %s" % (tag, type(tag)))
 
-            # cleanup
-            self.sync_keywords.keyword.remove(self.path, 'Example')
+    def test_add_keyword_to_openkm_document(self):
+        self.sync_keywords.add_keyword_to_openkm_document(self.path, 'Example')
 
-        def test_write_keywords_to_openkm_document(self):
-            self.sync_keywords.write_keywords_to_openkm_document(self.path, self.tags)
+        # cleanup
+        self.sync_keywords.keyword.remove(self.path, 'Example')
 
-        def test_single_document_django_to_helix(self):
-            pass
+    def test_write_keywords_to_openkm_document(self):
+        self.sync_keywords.write_keywords_to_openkm_document(self.path, self.tags)
+
+    def tearDown(self):
+        delete_test_document_on_openkm()
 
 
 class CategoryTest(TestCase):
 
     def setUp(self):
-        self.category = Category()
-        self.repository = Repository()
+        self.category = facades.Category()
+        self.repository = client.Repository()
 
     def test_get_category_root_object_structure(self):
         category_root = self.category.get_category_root()
@@ -370,14 +357,14 @@ class MockResource(object):
     Creates a mock resource, with populated many-to-many fields to be used in tests
     """
     def __init__(self):
-        self.sync_categories = SyncCategories()
+        self.sync_categories = sync.SyncCategories()
 
     def generate_test_resource(self):
         """
         Creates a Resource to be used in testing and populates the many-to-many fields
         with query sets.  Currently simple calling .all() on the related models
         """
-        document = OpenKmDocument()
+        document = models.TestOpenKmDocument()
         document.save()
 
         # for each model
@@ -422,104 +409,65 @@ class MockResource(object):
 
 
 
-class SyncCategoriesTest(TestCase):
+#class SyncCategoriesTest(TestCase):
+#
+#    fixtures = []
+#
+#    def setUp(self):
+#        self.sync_categories = sync.SyncCategories()
+#        self.category = facades.Category()
+#        m = MockResource()
+#        self.r = m.generate_test_resource()
+#
+#    def test_category_map(self):
+#        """ Check for existence only as content may change """
+#        self.assertTrue(hasattr(self.sync_categories, 'MODEL_CATEGORY_MAP'), msg="Category map dict not found")
+#
+#    def test_get_child_categories(self):
+#        """
+#        Returns a list of folder objects which are the child categories of the parent given as param
+#        """
+#
+#        # add a category to root so we will return results in the next step
+#        category_root_path = self.category.get_category_root().path
+#        mock_category_path = self.category.construct_valid_path_string(category_root_path, 'DummyXYZ')
+#        mock_category = self.category.create(mock_category_path)
+#
+#        child_categories = self.sync_categories.get_child_categories(category_root_path)
+#
+#        has_child = False
+#        for child in child_categories.item:
+#            if child.path == mock_category.path:
+#                has_child = True
+#        self.assertTrue(has_child, msg="The mock category %s was not found in the returned \
+#        child categories of %s" % (mock_category.path, category_root_path))
+#
+#        # clean up
+#        self.category.remove(mock_category.path)
+#
+#    def test_create_categories_from_django_model(self):
+#        #print self.sync_categories.create_categories_from_django_model(Resource, 'Test')
+#        pass
+#
+#    def test_django_to_openkm(self):
+#        for django_model, openkm_model in self.sync_categories.MODEL_CATEGORY_MAP.items():
+#            print django_model, openkm_model
+#
+#    def test_openkm_to_django(self):
+#        pass
+#
+#    def test_get_categories_from_gsa(self):
+#        for model in self.sync_categories.MODEL_CATEGORY_MAP.keys():
+#            model_name = model.__name__.lower()
+#            print self.sync_categories.get_related_objects_from_model(self.r, model_name)
 
-    fixtures = []
-
-    def setUp(self):
-        self.sync_categories = SyncCategories()
-        self.category = Category()
-        m = MockResource()
-        self.r = m.generate_test_resource()
-
-    def test_category_map(self):
-        """ Check for existence only as content may change """
-        self.assertTrue(hasattr(self.sync_categories, 'MODEL_CATEGORY_MAP'), msg="Category map dict not found")
-
-    def test_get_child_categories(self):
-        """
-        Returns a list of folder objects which are the child categories of the parent given as param
-        """
-
-        # add a category to root so we will return results in the next step
-        category_root_path = self.category.get_category_root().path
-        mock_category_path = self.category.construct_valid_path_string(category_root_path, 'DummyXYZ')
-        mock_category = self.category.create(mock_category_path)
-
-        child_categories = self.sync_categories.get_child_categories(category_root_path)
-
-        has_child = False
-        for child in child_categories.item:
-            if child.path == mock_category.path:
-                has_child = True
-        self.assertTrue(has_child, msg="The mock category %s was not found in the returned \
-        child categories of %s" % (mock_category.path, category_root_path))
-
-        # clean up
-        self.category.remove(mock_category.path)
-
-    def test_create_categories_from_django_model(self):
-        #print self.sync_categories.create_categories_from_django_model(Resource, 'Test')
-        pass
-
-    def test_django_to_openkm(self):
-        for django_model, openkm_model in self.sync_categories.MODEL_CATEGORY_MAP.items():
-            print django_model, openkm_model
-
-    def test_openkm_to_django(self):
-        pass
-
-    def test_get_categories_from_gsa(self):
-        for model in self.sync_categories.MODEL_CATEGORY_MAP.keys():
-            model_name = model.__name__.lower()
-            print self.sync_categories.get_related_objects_from_model(self.r, model_name)
 
 
-class SyncResourceTest(TestCase):
-
-    def setUp(self):
-        m = MockResource()
-        self.r = m.generate_test_resource()
-        self.sr = SyncResource(self.r)
-        self.test_document = create_test_document_on_openkm()
-
-    def test_init_was_successful(self):
-        """ Check that the objects we need were instantiated correctly """
-        self.assertTrue(isinstance(self.sr.sync_keywords, SyncKeywords))
-        self.assertTrue(isinstance(self.sr.auth, Auth))
-        self.assertTrue(isinstance(self.sr.document, Document))
-        self.assertTrue(isinstance(self.sr.repository, Repository))
-
-    def test_new_openkm_document_object(self):
-        """
-        Should return a new openkm document object.  Note this does not yet exist on OpenKM until
-        Document.create()
-        """
-        doc_obj = self.sr.new_openkm_document_object()
-        self.assertEquals(str(doc_obj.__class__), 'suds.sudsobject.document')
-
-    def test_document_exists_on_openkm(self):
-        path = self.test_document.path
-        self.assertTrue(self.sr.document_exists_on_openkm(path), msg="Document was not found on OpenKM: %s" % path)
-
-    def categories(self):
-        pass
-
-    def properties(self):
-        pass
-
-    def file(self):
-        """ Uploads the file
-        """
-        pass
-
-    def tearDown(self):
-        delete_test_document_on_openkm()
 
 class DirectoryListingTest(TestCase):
 
     def setUp(self):
-        self.dir = DirectoryListing()
+        self.dir = facades.DirectoryListing()
 
     def test_traverse(self):
         self.dir.traverse_folders('/okm:categories/')
@@ -528,7 +476,7 @@ class DirectoryListingTest(TestCase):
 class SyncFolderListTest(TestCase):
 
     def setUp(self):
-        self.folder_list = SyncFolderList()
+        self.folder_list = sync.SyncFolderList()
 
     def test_get_list_of_root_paths(self):
         paths = self.folder_list.get_list_of_root_paths()
