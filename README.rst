@@ -1,5 +1,3 @@
-**WARNING** : Currently under heavy development.  client is stable, however all other modules are likely to change.  You have been warned.
-
 django-openkm
 =============
 
