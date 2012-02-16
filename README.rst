@@ -1,5 +1,3 @@
-**WARNING** : Currently under heavy development.  client is stable, however all other modules are likely to change.  You have been warned.
-
 django-openkm
 =============
 
@@ -18,11 +16,33 @@ INSTALLATION
 3. Add the following to your Django settings::
 
     OPENKM = {
-        'UploadRoot': '/okm:root/',
-        'Host': 'http://localhost:8080/',
-        'User': 'okmAdmin',
-        'Password': 'admin',
-        'Path': 'OpenKM', 
+        'configuration': {
+            'Logging': True,
+            'UploadRoot': '/okm:root/Uploads/',
+            'Host': 'http://localhost:8080/',
+            'User': 'okmAdmin',
+            'Password': 'admin',
+            'Path': 'OpenKM',
+            'tagging': True
+        },
+        'categories': {
+            # simply a list of string paths pointing to your models
+            # { 'path.to.app.model' : 'Category name on OpenKM' }
+            'yourproject.foo.models.Region': 'Region',
+            'yourproject.foo.models.Role': 'Roles',
+            'yourproject.foo.models.Product': 'Products',
+            'yourproject.bar.models.Task': 'Task,'
+        },
+        'properties': {
+            "okg:customProperties": {
+                "okp:customProperties.title": {'attribute': 'name'},
+                'okp:customProperties.description': {'attribute': 'description'},
+                'okp:customProperties.languages': {'attribute': 'languages', 'choices': None},
+                },
+            "okg:salesProperties": {
+                'okp:salesProperties.assetType': {'attribute': 'type', 'choices': 'path.to.your.CHOICES'},
+                }
+        }
     }
     
 4. Ensure your MEDIA_ROOT is set up with the correct permissions and working
