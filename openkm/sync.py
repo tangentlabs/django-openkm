@@ -4,7 +4,7 @@ from django.conf import settings
 
 from suds import WebFault
 
-from django_openkm import client, facades, utils
+import client, facades, utils
 
 
 class SyncKeywords(object):

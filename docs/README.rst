@@ -1,7 +1,7 @@
 Overview
 ========
 
-django_openkm provides Django integration for the OpenKM document management system.  Once you have added the application
+django-openkm provides Django integration for the OpenKM document management system.  Once you have added the application
 you can extend its abstract models to delegate the storage, search and retrieval of your application's document to OpenKM.
 
 Features:

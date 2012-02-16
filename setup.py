@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 # Use 'final' as the 4th element to indicate
 # a full release
 
-VERSION = (0, 3, 8, 'alpha', 0)
+VERSION = (0, 4, 0, 'alpha', 0)
 
 def get_short_version():
     return '%s.%s' % (VERSION[0], VERSION[1])
@@ -28,13 +28,13 @@ def get_version():
         version = '%s %s %s' % (version, VERSION[3], VERSION[4])
     return version
 
-setup(name='django_openkm',
+setup(name='django-openkm',
       version=get_version().replace(' ', '-'),
-      url='https://github.com/igniteflow/django-openkm',
+      url='https://github.com/tangentlabs/django-openkm',
       author="Phil Tysoe",
       author_email="philip.tysoe@tangentlabs.co.uk",
-      description="A client library for OpenKM document management system.  Integration with Django 1.2+",
-      long_description="A client library for OpenKM document management system.  Integration with Django 1.2+",
+      description="A Python client library and functionality for the OpenKM document management system.",
+      long_description="A Python client library for OpenKM document management system. Integrates with Django models, delegating document storage and retrieval to OpenKM",
       keywords="OpenKM, Django, document management",
       license='BSD',
       platforms=['linux'],

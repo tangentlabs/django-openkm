@@ -11,9 +11,9 @@ INSTALLATION
 
 1. Install with::
 
-    pip install django_openkm
+    pip install django-openkm
 
-2. Add 'django_openkm' to your INSTALLED_APPS
+2. Add 'django-openkm' to your INSTALLED_APPS
 
 3. Add the following to your Django settings::
 
