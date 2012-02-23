@@ -28,7 +28,7 @@ def get_version():
         version = '%s %s %s' % (version, VERSION[3], VERSION[4])
     return version
 
-setup(name='django-openkm',
+setup(name='django_openkm',
       version=get_version().replace(' ', '-'),
       url='https://github.com/tangentlabs/django-openkm',
       author="Phil Tysoe",

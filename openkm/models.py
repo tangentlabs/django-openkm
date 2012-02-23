@@ -6,7 +6,7 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q
 
-import facades
+import facades, exceptions
 
 class OpenKmMetadata(models.Model):
     """
@@ -99,8 +99,11 @@ class OpenKmDocument(OpenKmMetadata):
 
     def upload_to_openkm(self, file_obj, taxonomy=[]):
         """Uploads the document to the OpenKM server """
-        document_manager = facades.DocumentManager()
-        return document_manager.create(file_obj, taxonomy=taxonomy)
+        try:
+            document_manager = facades.DocumentManager()
+            return document_manager.create(file_obj, taxonomy=taxonomy)
+        except exceptions.ItemExistsException, e:
+            raise Exception('Document already exists')
 
     def set_model_fields(self, openkm_document):
         """

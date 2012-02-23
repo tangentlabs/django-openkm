@@ -363,6 +363,37 @@ class DjangoToOpenKm(SyncDocument):
                 logging.info("Adding category [%s] to %s" % (category_uuid, document.okm_path))
                 self.category.add_to_node(document.okm_path, category_uuid)
 
+    def get_category_uuids(self, document, openkm_folderlist_class):
+        """
+        *** TEMPORARY COPY PASTA HORRIBLENESS ***
+        Using the MODEL_CATEGORY_MAP gets all the associated objects for each m2m relationship and adds
+        them as categories to the given document on OpenKM
+        :param document_class: a class object.  This should be your Django model which extends the OpenKmDocument
+        abstract base class
+        """
+        category_uuids = []
+
+        for related_model_class in settings.OPENKM['categories'].keys():
+
+            # prepare the lists of AND and OR predicates for the query
+            and_predicates = ['categories', related_model_class.__name__]
+            fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
+            or_predicates = [field.__unicode__() for field in fields]
+
+            # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
+
+            logging.info("and_predicates: %s", and_predicates)
+            logging.info("or_predicates: %s", or_predicates)
+
+            # get the category UUIDs
+            category_uuids.extend(openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates))
+            logging.info("category_uuids: %s", category_uuids)
+
+        return category_uuids
+
+
+
+
     def properties(self, document):
         sync_properties = SyncProperties()
         sync_properties.django_to_openkm(document)
