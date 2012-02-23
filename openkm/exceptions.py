@@ -1,9 +1,8 @@
 class ExceptionParser(object):
     """
-        Utitility class to parse returned exceptions from SUDS
-        param e:  from except Exception, e:
-       """
-
+    Utility class to parse returned exceptions from SUDS
+    param e:  from except Exception, e:
+    """
     def get_message(self, e):
         exception = self.get_raised_exception_class(e)
         return exception[0].message.__str__()

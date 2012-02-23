@@ -1,7 +1,22 @@
+import StringIO
+
 from django.test import TestCase
 from django.conf import settings
 
-import client, facades, models, sync
+import suds
+
+import client, exceptions, facades, models, sync
+
+class TryExceptTest(TestCase):
+    """
+    Exception handling decorator
+    """
+    def setUp(self):
+        pass
+
+    def test_try_except(self):
+        #client.try_except()
+        pass
 
 class ClientTest(TestCase):
     """ Tests of functions and settings """
@@ -514,3 +529,33 @@ class TaxonomyTest(TestCase):
     def test_build_path(self):
         dependencies = self.taxonomy.generate_path_dependencies(self.folders)
         self.taxonomy.build_path(dependencies)
+
+def get_test_file_object():
+    f = StringIO.StringIO('I made lasers for NASA')
+    f.name = 'coverage.sh'
+    return f
+
+class DocumentExceptionTest(TestCase):
+
+    def setUp(self):
+        self.dm = facades.DocumentManager()
+        self.f = get_test_file_object()
+
+    def test_create(self):
+        # create the file if it doesn't exist
+        if not self.dm.document_exists(get_test_file_object()):
+            path = self.dm.create(get_test_file_object()).path
+        else:
+            path = self.dm.create_path_from_file(get_test_file_object())
+
+        # should raise ItemExistsException
+        self.assertRaises(exceptions.ItemExistsException, self.dm.create, get_test_file_object())
+
+        # cleanup
+        self.dm.document.delete(path)
+
+
+
+
+
+
