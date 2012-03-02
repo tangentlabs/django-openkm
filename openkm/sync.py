@@ -188,6 +188,7 @@ class SyncProperties(object):
         for document_property in document_properties:
             if property_map.get(document_property.name, None):
                 logging.info('Found property: %s', document_property.name)
+#                import ipdb; ipdb.set_trace()
                 meta = property_map.get(document_property.name, None)
                 if 'choices' in meta:
                     option = self.get_option(document_property.options)
@@ -196,6 +197,7 @@ class SyncProperties(object):
                         setattr(document, meta['attribute'], value)
                         logging.info('Updated %s : %s' % (meta['attribute'], option.label))
                     elif option and not meta['choices']:
+
                         setattr(document, meta['attribute'], option.value)
                         logging.info('Updated %s : %s' % (meta['attribute'], option.value))
                 else:
@@ -372,24 +374,38 @@ class DjangoToOpenKm(SyncDocument):
 class OpenKmToDjango(SyncDocument):
 
     def execute(self, document):
+        logging.info('Syncing openkm -> django: %s' % document)
         self.keywords(document)
         self.properties(document)
         self.categories(document)
 
     def keywords(self, document):
         keywords = self.keyword.get_for_document(document.okm_path)
-        logging.info('[%s] OpenKM keywords: %s' % (document, keywords))
-        document.update_tags(','.join(keywords))
-        logging.info('[%s] document tags updated.  Now: %s' % (document, keywords))
+        if keywords:
+            logging.info('[%s] OpenKM keywords: %s' % (document, keywords))
+            document.update_tags(','.join(keywords))
+            logging.info('[%s] document tags updated.  Now: %s' % (document, keywords))
+        else:
+            # document doesn't have keywords
+            logging.info('No keywords found for: %s' % document)
+            return None
 
     def categories(self, document):
         category_bin = {}
         okm_document_properties = self.document.get_properties(document.okm_path)
 
+        # return None if the document doesn't have any categories
+        if not hasattr(okm_document_properties, 'categories'):
+            logging.info('No categories found for: %s' % document)
+            return None
+
         # add the categories from OpenKM to the dict
         for category in okm_document_properties.categories:
-            category_name, object_name = utils.get_category_from_path(category.path) # find the category
-            category_bin = self.add_category_to_dict(category_name, object_name, category_bin)
+            try:
+                category_name, object_name = utils.get_category_from_path(category.path) # find the category
+                category_bin = self.add_category_to_dict(category_name, object_name, category_bin)
+            except ValueError, e:
+                logging.exception(e)
 
         for related_class, values in category_bin.items():
             try:

@@ -79,7 +79,11 @@ class Keyword(object):
         :param path: OpenKM node path of document
         """
         document = self.document.get_properties(path)
-        return document.keywords
+        try:
+            return document.keywords
+        except AttributeError, e:
+            logging.exception(e)
+            return None
 
 
 class FileSystem(object):
