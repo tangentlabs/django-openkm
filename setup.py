@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 # Use 'final' as the 4th element to indicate
 # a full release
 
-VERSION = (0, 4, 0, 'alpha', 0)
+VERSION = (0, 5, 0, 'alpha', 0)
 
 def get_short_version():
     return '%s.%s' % (VERSION[0], VERSION[1])
@@ -28,7 +28,7 @@ def get_version():
         version = '%s %s %s' % (version, VERSION[3], VERSION[4])
     return version
 
-setup(name='django-openkm',
+setup(name='django_openkm',
       version=get_version().replace(' ', '-'),
       url='https://github.com/tangentlabs/django-openkm',
       author="Phil Tysoe",
