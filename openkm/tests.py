@@ -371,7 +371,7 @@ class MockResource(object):
         for klass in self.sync_categories.MODEL_CATEGORY_MAP.keys():
 
             # get the model_set many-to-many function of the Resource object
-            method_name = '%s_set' % klass.__name__.lower()
+            method_name = '%s' % klass.__name__.lower()
             _set = getattr(document, method_name)
 
             # populate the resource with objects from the related model
@@ -397,7 +397,7 @@ class MockResource(object):
         for klass in related_model_klasses:
 
             # get the many-to-many function of the model_klass object
-            method_name = '%s_set' % klass.__name__.lower()
+            method_name = '%s' % klass.__name__.lower()
             _set = getattr(main_model, method_name)
 
             # populate the model_klass instance with objects from the related model

@@ -410,7 +410,7 @@ class OpenKmToDjango(SyncDocument):
         for related_class, values in category_bin.items():
             try:
                 # get the related manager for the class
-                _set = getattr(document, "%s_set" % related_class.__name__.lower()) # get the m2m manager
+                _set = getattr(document, "%s" % related_class.__name__.lower()) # get the m2m manager
                 _set.clear() # remove the current objects
 
                 # special case for Tasks. this would be better as one to one, but need to maps to the unicode val
@@ -422,6 +422,8 @@ class OpenKmToDjango(SyncDocument):
                 logging.info('Adding the following categories: %s', objects)
                 [_set.add(object) for object in objects]
             except AttributeError, e:
+                logging.exception(e)
+            except Exception, e:
                 logging.exception(e)
 
 
