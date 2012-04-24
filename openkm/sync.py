@@ -219,7 +219,7 @@ class SyncProperties(object):
         map['okg:customProperties']['okp:customProperties.title'].update({'value': document.name})
         map['okg:customProperties']['okp:customProperties.description'].update({'value': document.description})
         map['okg:customProperties']['okp:customProperties.languages'].update({'value': document.language})
-        map['okg:salesProperties']['okp:salesProperties.assetType'].update({'value': document.get_type_display()})
+        #map['okg:salesProperties']['okp:salesProperties.assetType'].update({'value': document.get_type_display()})
         return map
 
 
@@ -382,9 +382,12 @@ class OpenKmToDjango(SyncDocument):
     def keywords(self, document):
         keywords = self.keyword.get_for_document(document.okm_path)
         if keywords:
-            logging.info('[%s] OpenKM keywords: %s' % (document, keywords))
-            document.update_tags(','.join(keywords))
-            logging.info('[%s] document tags updated.  Now: %s' % (document, keywords))
+            try:
+                logging.info('[%s] OpenKM keywords: %s' % (document, keywords))
+                document.update_tags(','.join(keywords))
+                logging.info('[%s] document tags updated.  Now: %s' % (document, keywords))
+            except TypeError, e:
+                logging.exception(e)
         else:
             # document doesn't have keywords
             logging.info('No keywords found for: %s' % document)
