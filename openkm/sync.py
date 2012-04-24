@@ -16,7 +16,7 @@ class SyncKeywords(object):
         """
         Returns an object's tags as a list
         """
-        return document.tag_set.split(',')
+        return document.tags.split(',')
 
     def add_keyword_to_openkm_document(self, path, keyword):
         return self.keyword.add(path, keyword.strip())
@@ -127,7 +127,7 @@ class SyncCategories(object):
         Accepts a Document and a single class object of a many-to-many field
         :returns queryset the related model objects associated with the given document
         """
-        method_name = '%s_set' % related_model_class.__name__.lower()
+        method_name = '%s' % related_model_class.__name__.lower()
         _set = getattr(document, method_name)
 
         return _set.all()
@@ -143,7 +143,7 @@ class SyncCategories(object):
         For example if called with a document and the string region
         it will return the regions associated with this document
         """
-        method_name = '%s_set' % related_model_name
+        method_name = '%s' % related_model_name
         if hasattr(document, method_name):
             _member = getattr(document, method_name)
             return _member.all()
