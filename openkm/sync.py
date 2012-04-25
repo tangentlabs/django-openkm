@@ -1,4 +1,5 @@
 import logging
+logger = logging.getLogger( __name__ )
 
 from django.conf import settings
 
@@ -81,15 +82,15 @@ class SyncCategories(object):
         """
         if not parent_path:
             parent_path = self.category.get_category_root().path
-        logging.info("parent path: %s", parent_path)
+        logger.info("parent path: %s", parent_path)
 
         for category_name in self.MODEL_CATEGORY_MAP.values():
             path = self.category.construct_valid_path_string(parent_path, category_name)
             try:
                 self.category.create(path)
-                logging.info("%s created" % path)
+                logger.info("%s created" % path)
             except:
-                logging.info("%s creation failed" % path)
+                logger.info("%s creation failed" % path)
 
     def get_child_categories(self, parent_path):
         """
@@ -120,7 +121,7 @@ class SyncCategories(object):
                 self.category.create('/okm:categories/%s/%s' % (category_name,\
                                                                 object.__unicode__().replace('/','--')))
             except:
-                logging.info("%s creation failed" % object.__unicode__().replace('/',''))
+                logger.info("%s creation failed" % object.__unicode__().replace('/',''))
 
     def get_objects_from_m2m_model(self, document, related_model_class):
         """
@@ -148,7 +149,7 @@ class SyncCategories(object):
             _member = getattr(document, method_name)
             return _member.all()
         else:
-            logging.error("Object does not have method %s" % method_name)
+            logger.error("Object does not have method %s" % method_name)
 
 
 class SyncProperties(object):
@@ -161,7 +162,7 @@ class SyncProperties(object):
         self.PROPERTY_GROUP_MAP = self.populate_property_group_map(settings.OPENKM['properties'], document)
 
         for property_group in self.PROPERTY_GROUP_MAP:
-            logging.debug("property_group: %s", property_group)
+            logger.debug("property_group: %s", property_group)
             if not self.property_group.has_group(document.okm_path, property_group):
                 self.property_group.add_group(document.okm_path, property_group)
 
@@ -182,12 +183,12 @@ class SyncProperties(object):
                 property_map = self.PROPERTY_GROUP_MAP[property_group.name]
                 self.set_attributes(property_map, document_properties[0], document)
             except KeyError, e:
-                logging.error('Property group not found: %s', property_group.name)
+                logger.error('Property group not found: %s', property_group.name)
 
     def set_attributes(self, property_map, document_properties, document):
         for document_property in document_properties:
             if property_map.get(document_property.name, None):
-                logging.info('Found property: %s', document_property.name)
+                logger.info('Found property: %s', document_property.name)
 #                import ipdb; ipdb.set_trace()
                 meta = property_map.get(document_property.name, None)
                 if 'choices' in meta:
@@ -195,14 +196,14 @@ class SyncProperties(object):
                     if option and meta['choices']:
                         value = utils.find_key(dict(meta['choices']), option.label)
                         setattr(document, meta['attribute'], value)
-                        logging.info('Updated %s : %s' % (meta['attribute'], option.label))
+                        logger.info('Updated %s : %s' % (meta['attribute'], option.label))
                     elif option and not meta['choices']:
 
                         setattr(document, meta['attribute'], option.value)
-                        logging.info('Updated %s : %s' % (meta['attribute'], option.value))
+                        logger.info('Updated %s : %s' % (meta['attribute'], option.value))
                 else:
                     setattr(document, meta['attribute'], document_property.value)
-                    logging.info('Updated %s : %s' % (meta['attribute'], document_property.value))
+                    logger.info('Updated %s : %s' % (meta['attribute'], document_property.value))
 
         document.save()
 
@@ -219,7 +220,7 @@ class SyncProperties(object):
         map['okg:customProperties']['okp:customProperties.title'].update({'value': document.name})
         map['okg:customProperties']['okp:customProperties.description'].update({'value': document.description})
         map['okg:customProperties']['okp:customProperties.languages'].update({'value': document.language})
-        #map['okg:salesProperties']['okp:salesProperties.assetType'].update({'value': document.get_type_display()})
+        map['okg:salesProperties']['okp:salesProperties.assetType'].update({'value': document.type.name})
         return map
 
 
@@ -240,13 +241,13 @@ class SyncFolderList(object):
         """
         :param klass your django model class storing the OpenKM folder list
         """
-        logging.info('Class: %s', klass)
+        logger.info('Class: %s', klass)
 
         paths = self.get_list_of_root_paths()
-        logging.info(paths)
+        logger.info(paths)
 
         folders = self.traverse_folders(paths)
-        logging.info(folders)
+        logger.info(folders)
 
         self.save(folders, klass)
 
@@ -262,7 +263,7 @@ class SyncFolderList(object):
 
     def save(self, folders, klass):
         for folder in folders:
-            logging.info(folder)
+            logger.info(folder)
             try:
                 cl, created = klass.objects.get_or_create(okm_uuid=folder.uuid)
                 cl.okm_author = folder.author
@@ -308,7 +309,9 @@ class DjangoToOpenKm(SyncDocument):
         :param document_class: a class object.  This should be your Django model which extends the OpenKmDocument
         abstract base class
         """
+        logger.info('Syncing django -> openkm: %s' % document)
         try:
+            logger.debug(document)
             if not document.okm_uuid and document.file:
                 taxonomy = self.build_taxonomy(document)
                 self.document_manager.create(document.file, taxonomy)
@@ -316,13 +319,22 @@ class DjangoToOpenKm(SyncDocument):
             self.categories(document, document_class)
             self.properties(document)
         except Exception, e:
-            logging.exception(e)
+            logger.exception(e)
 
     def build_taxonomy(self, document):
-        user_profile = document.owner.get_profile()
-        region = user_profile.region.name
+        """
+        Dynamically builds a taxonomy for a document.
+        Of the format:
+        /region/year/team/
+        """
+        if not document.owner:
+            region = 'Global'
+            team = 'Default'
+        else:
+            user_profile = document.owner.get_profile()
+            region = user_profile.region.name
+            team = user_profile.team.name
         year = str(document.created.year)
-        team = document.owner.team_member.all()[0].name
         taxonomy = [region, year, team]
         return taxonomy
 
@@ -333,7 +345,7 @@ class DjangoToOpenKm(SyncDocument):
         :returns boolean:  True on success, False on fail
         """
         tags = self.sync_keywords.get_tags_from_document(document)
-        logging.info("[GSA] Tags: %s", tags)
+        logger.info("[GSA] Tags: %s", tags)
         self.sync_keywords.write_keywords_to_openkm_document(document.okm_path, tags)
         return self.sync_keywords.confirm_keywords_written_to_openkm(document.okm_path, tags)
 
@@ -353,16 +365,16 @@ class DjangoToOpenKm(SyncDocument):
 
             # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
 
-            logging.info("and_predicates: %s", and_predicates)
-            logging.info("or_predicates: %s", or_predicates)
+            logger.info("and_predicates: %s", and_predicates)
+            logger.info("or_predicates: %s", or_predicates)
 
             # get the category UUIDs
             category_uuids = openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
-            logging.info("category_uuids: %s", category_uuids)
+            logger.info("category_uuids: %s", category_uuids)
 
             # add the categories to the document
             for category_uuid in category_uuids:
-                logging.info("Adding category [%s] to %s" % (category_uuid, document.okm_path))
+                logger.info("Adding category [%s] to %s" % (category_uuid, document.okm_path))
                 self.category.add_to_node(document.okm_path, category_uuid)
 
     def properties(self, document):
@@ -374,7 +386,7 @@ class DjangoToOpenKm(SyncDocument):
 class OpenKmToDjango(SyncDocument):
 
     def execute(self, document):
-        logging.info('Syncing openkm -> django: %s' % document)
+        logger.info('Syncing openkm -> django: %s' % document)
         self.keywords(document)
         self.properties(document)
         self.categories(document)
@@ -383,14 +395,14 @@ class OpenKmToDjango(SyncDocument):
         keywords = self.keyword.get_for_document(document.okm_path)
         if keywords:
             try:
-                logging.info('[%s] OpenKM keywords: %s' % (document, keywords))
+                logger.info('[%s] OpenKM keywords: %s' % (document, keywords))
                 document.update_tags(','.join(keywords))
-                logging.info('[%s] document tags updated.  Now: %s' % (document, keywords))
+                logger.info('[%s] document tags updated.  Now: %s' % (document, keywords))
             except TypeError, e:
-                logging.exception(e)
+                logger.exception(e)
         else:
             # document doesn't have keywords
-            logging.info('No keywords found for: %s' % document)
+            logger.info('No keywords found for: %s' % document)
             return None
 
     def categories(self, document):
@@ -399,7 +411,7 @@ class OpenKmToDjango(SyncDocument):
 
         # return None if the document doesn't have any categories
         if not hasattr(okm_document_properties, 'categories'):
-            logging.info('No categories found for: %s' % document)
+            logger.info('No categories found for: %s' % document)
             return None
 
         # add the categories from OpenKM to the dict
@@ -408,7 +420,7 @@ class OpenKmToDjango(SyncDocument):
                 category_name, object_name = utils.get_category_from_path(category.path) # find the category
                 category_bin = self.add_category_to_dict(category_name, object_name, category_bin)
             except ValueError, e:
-                logging.exception(e)
+                logger.exception(e)
 
         for related_class, values in category_bin.items():
             try:
@@ -422,12 +434,12 @@ class OpenKmToDjango(SyncDocument):
 
                 # get the objects and add them to the model
                 objects = [related_class.objects.get(name__icontains=value) for value in values]
-                logging.info('Adding the following categories: %s', objects)
+                logger.info('Adding the following categories: %s', objects)
                 [_set.add(object) for object in objects]
             except AttributeError, e:
-                logging.exception(e)
+                logger.exception(e)
             except Exception, e:
-                logging.exception(e)
+                logger.exception(e)
 
 
     def sanitize_task_description(self, task):
@@ -446,7 +458,7 @@ class OpenKmToDjango(SyncDocument):
         related_class = utils.find_key(settings.OPENKM['categories'], category_name) # get the related class to document
 
         if not related_class:
-            logging.error('%s not found in OPENKM[\'categories\']', category_name)
+            logger.error('%s not found in OPENKM[\'categories\']', category_name)
             return category_bin
 
         if related_class not in category_bin:
