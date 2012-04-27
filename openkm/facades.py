@@ -186,6 +186,7 @@ class DirectoryListing(object):
         return self.documents
 
     def traverse_folders(self, path):
+        print path
         folders_temp = self.folder.get_children(path)
 
         # if there are child folders, traverse them recursively
@@ -231,7 +232,8 @@ class DocumentManager(object):
         return utils.make_file_java_byte_array_compatible(file_obj)
 
     def create_document_on_openkm(self, document, content):
-        return self.document.create(document, content)
+        okm_document = self.document.create(document, content)
+        return okm_document
 
     def get_path(self, uuid):
         return self.document.get_path(uuid)

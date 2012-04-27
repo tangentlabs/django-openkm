@@ -244,10 +244,10 @@ class SyncFolderList(object):
         logger.info('Class: %s', klass)
 
         paths = self.get_list_of_root_paths()
-        logger.info(paths)
+        #logger.info(paths)
 
         folders = self.traverse_folders(paths)
-        logger.info(folders)
+
 
         self.save(folders, klass)
 
@@ -255,6 +255,7 @@ class SyncFolderList(object):
         return [self.category.get_category_root().path, self.repository.get_root_folder().path]
 
     def traverse_folders(self, paths):
+
         folders = []
         for path in paths:
             folders.extend(self.dir.traverse_folders(path))
@@ -263,7 +264,6 @@ class SyncFolderList(object):
 
     def save(self, folders, klass):
         for folder in folders:
-            logger.info(folder)
             try:
                 cl, created = klass.objects.get_or_create(okm_uuid=folder.uuid)
                 cl.okm_author = folder.author
@@ -314,12 +314,14 @@ class DjangoToOpenKm(SyncDocument):
             logger.debug(document)
             if not document.okm_uuid and document.file:
                 taxonomy = self.build_taxonomy(document)
-                self.document_manager.create(document.file, taxonomy)
+                okm_document = self.document_manager.create(document.file, taxonomy)
+                document.set_model_fields(okm_document)
+                document.save()
             self.keywords(document)
             self.categories(document, document_class)
             self.properties(document)
         except Exception, e:
-            logger.exception(e)
+            print e
 
     def build_taxonomy(self, document):
         """
@@ -357,20 +359,21 @@ class DjangoToOpenKm(SyncDocument):
         abstract base class
         """
         for related_model_class in settings.OPENKM['categories'].keys():
-
+            #import ipdb; ipdb.set_trace()
             # prepare the lists of AND and OR predicates for the query
-            and_predicates = ['categories', related_model_class.__name__]
+            mapped_category_name = self.category_map(related_model_class.__name__)
+            and_predicates = ['categories', mapped_category_name]
             fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
             or_predicates = [field.__unicode__() for field in fields]
 
             # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
 
-            logger.info("and_predicates: %s", and_predicates)
-            logger.info("or_predicates: %s", or_predicates)
+            print("and_predicates: %s", and_predicates)
+            print("or_predicates: %s", or_predicates)
 
             # get the category UUIDs
             category_uuids = openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
-            logger.info("category_uuids: %s", category_uuids)
+            print("category_uuids: %s", category_uuids)
 
             # add the categories to the document
             for category_uuid in category_uuids:
@@ -380,6 +383,16 @@ class DjangoToOpenKm(SyncDocument):
     def properties(self, document):
         sync_properties = SyncProperties()
         sync_properties.django_to_openkm(document)
+
+    def category_map(self, model_class_name):
+        map = {
+            'Industry': 'Industries',
+            'Region': 'Region',
+            'Role': 'Roles',
+            'Solution': 'Solutions',
+            'Task': 'Tasks',
+        }
+        return map[model_class_name]
 
 
 

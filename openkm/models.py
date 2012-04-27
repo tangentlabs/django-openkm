@@ -30,37 +30,35 @@ class OpenKmFolderListManager(models.Manager):
         :param or_predicates: list of OR query arguments eg. ['Latin-America', 'EMEA']
         :returns a list of uuids
         """
-        and_predicates_list = self._build_and_predicate_list(and_predicates)
-        or_predicates_list = self._build_or_predicate_list(or_predicates)
 
-        and_list = [Q(x) for x in and_predicates_list]
-        or_list = [Q(x) for x in or_predicates_list]
+
+        if and_predicates:
+            and_predicates_list = self._build_and_predicate_list(and_predicates)
+            and_list = [Q(x) for x in and_predicates_list]
+            and_list = reduce(operator.and_, and_list)
+        else:
+            return []
+
+        if or_predicates:
+            or_predicates_list = self._build_or_predicate_list(or_predicates)
+            or_list = [Q(x) for x in or_predicates_list]
+            or_list = reduce(operator.or_, or_list)
+        else:
+            return []
 
         query_set = super(OpenKmFolderListManager, self).get_query_set()
 
         try:
-            and_list = reduce(operator.and_, and_list)
-            print 'and_list', and_list, '\n'
-        except TypeError:
-            and_list = []
+            if or_list:
+                query_set = query_set.filter(or_list)
+            if and_list:
+                query_set = query_set.filter(and_list)
 
-        try:
-
-            or_list = reduce(operator.or_, or_list)
-            print 'or_list', or_list, '\n'
-        except TypeError:
-            and_list = []
-
-        try:
-            query_set.filter(or_list)
-            query_set = query_set.filter(and_list)
             return [resource.okm_uuid for resource in query_set]
         except TypeError, e:
-            logging.exception(e)
-            return []
+            print e
         except AttributeError, e:
-            logging.exception(e)
-            return []
+            print e
 
     def _build_and_predicate_list(self, arguments):
         args = []
