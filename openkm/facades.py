@@ -264,23 +264,49 @@ class Property(object):
         """
         for property in properties[0]:
             if hasattr(property, 'label') and property.name in new_values.keys():
-                logging.info('Found %s to %s' % (property.name, new_values[property.name]))
+                print('Found %s to %s' % (property.name, new_values[property.name]))
                 if hasattr(property, 'options'):
                     try:
+                        value = new_values[property.name]['value']
+                        print 'Property name: ', property.name
+                        if property.name == 'okp:customProperties.languages':
+                            value = self.get_language_label(value)
+                        print 'Value: ', value
                         property.options = self.update_options_list(property.options, new_values[property.name]['value'])
                     except KeyError, e:
-                        logging.exception(e)
+                        print(e)
                 else:
-                    logging.info('Updating %s to %s' % (property.name, new_values[property.name]))
+                    print('Updating %s to %s' % (property.name, new_values[property.name]))
                     property.value = new_values[property.name]['value']
 
         return properties
 
+    def get_language_label(self, language_code):
+        map = (
+            ('en', 'English'),
+            ('de', 'German'),
+            ('es', 'Spanish (Spain)*'),
+            ('fr', 'French'),
+            ('pt', 'Portuguese'),
+            ('zh', 'Chinese'),
+            ('ko', 'Korean'),
+            ('ja', 'Japanese'),
+            ('ru', 'Russian'),
+            ('ro', 'Romanian'),
+            )
+        map = dict(map)
+
+        try:
+            return map[language_code]
+        except:
+            return 'English'
+
     def update_options_list(self, options, new_value):
        for option in options:
-           if option.label == new_value:
+           print option.label, '==', new_value
+           if (option.label == new_value) or (option.value == new_value):
                option.selected = True
-               logging.info('Updating option[%s].selected to True', option.label)
+               print('Updating option[%s].selected to True', option.label)
            else:
                option.selected = False
 
