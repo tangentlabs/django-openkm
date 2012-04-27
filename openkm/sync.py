@@ -159,6 +159,7 @@ class SyncProperties(object):
         self.property_group = client.PropertyGroup()
 
     def django_to_openkm(self, document):
+        import ipdb; ipdb.set_trace()
         self.PROPERTY_GROUP_MAP = self.populate_property_group_map(settings.OPENKM['properties'], document)
 
         for property_group in self.PROPERTY_GROUP_MAP:
@@ -183,7 +184,8 @@ class SyncProperties(object):
                 property_map = self.PROPERTY_GROUP_MAP[property_group.name]
                 self.set_attributes(property_map, document_properties[0], document)
             except KeyError, e:
-                logger.error('Property group not found: %s', property_group.name)
+                #logger.error('Property group not found: %s', property_group.name)
+                print e
 
     def set_attributes(self, property_map, document_properties, document):
         for document_property in document_properties:
@@ -196,14 +198,17 @@ class SyncProperties(object):
                     if option and meta['choices']:
                         value = utils.find_key(dict(meta['choices']), option.label)
                         setattr(document, meta['attribute'], value)
-                        logger.info('Updated %s : %s' % (meta['attribute'], option.label))
+                        print('Updated %s : %s' % (meta['attribute'], option.label))
+#                        logger.info('Updated %s : %s' % (meta['attribute'], option.label))
                     elif option and not meta['choices']:
 
                         setattr(document, meta['attribute'], option.value)
-                        logger.info('Updated %s : %s' % (meta['attribute'], option.value))
+                        print('Updated %s : %s' % (meta['attribute'], option.value))
+#                        logger.info('Updated %s : %s' % (meta['attribute'], option.value))
                 else:
                     setattr(document, meta['attribute'], document_property.value)
-                    logger.info('Updated %s : %s' % (meta['attribute'], document_property.value))
+#                    logger.info('Updated %s : %s' % (meta['attribute'], document_property.value))
+                    print('Updated %s : %s' % (meta['attribute'], document_property.value))
 
         document.save()
 
@@ -317,8 +322,8 @@ class DjangoToOpenKm(SyncDocument):
                 okm_document = self.document_manager.create(document.file, taxonomy)
                 document.set_model_fields(okm_document)
                 document.save()
-            self.keywords(document)
-            self.categories(document, document_class)
+#            self.keywords(document)
+#            self.categories(document, document_class)
             self.properties(document)
         except Exception, e:
             print e
