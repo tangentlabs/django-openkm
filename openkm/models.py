@@ -147,6 +147,16 @@ class OpenKmDocument(OpenKmMetadata):
         verbose_name = 'OpenKM Document'
         verbose_name_plural = 'OpenKM Documents'
 
+    def okm_date_string(self, date):
+        '''
+        :param datetime.date object
+        Returns an OpenKM standard date format string
+        eg. 2013-04-20T17:38:42.356+01:00
+        '''
+        if not isinstance(date, datetime.date):
+            raise Exception('Argument must be a datetime.date object')
+        return date.strftime('%Y-%m-%dT00:00:00.356+01:00')
+
 class TestOpenKmDocument(OpenKmDocument):
     pass
 
