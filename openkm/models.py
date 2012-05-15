@@ -78,7 +78,7 @@ class OpenKmFolderList(OpenKmMetadata):
     objects = OpenKmFolderListManager()
 
     def __unicode__(self):
-        return self.okm_path
+        return "%s" % self.okm_path
 
     class Meta:
         abstract = True
@@ -91,33 +91,33 @@ class OpenKmDocument(OpenKmMetadata):
     okm_filename = models.CharField(max_length=255, blank=True, null=True)
     file = models.FileField(max_length=255, upload_to='resources/%Y/%m/%d/', blank=True, null=True, help_text="Upload a file from your local machine")
 
-    def save(self, *args, **kwargs):
-        """
-        Custom save functionality.
-        (1) Upload document to OpenKM
-        (2) Set the local model fields with the returned metadata from (1)
-        *Note that locally stored files will be periodically deleted
-        """
-        if self.file and self.id is None:
-            """ A new resource to be uploaded OpenKM """
-            try:
-                file_obj = self.file._get_file()
-
-                if 'taxonomy' in kwargs:
-                    openkm_document = self.upload_to_openkm(file_obj, taxonomy)
-                else:
-                    openkm_document = self.upload_to_openkm(file_obj)
-
-                if openkm_document:
-                    self.set_model_fields(openkm_document)
-                    super(OpenKmDocument, self).save(*args, **kwargs)
-                else:
-                    raise Exception('None found when document object was expected')
-                return
-            except Exception,e:
-                raise
-
-        super(OpenKmDocument, self).save(*args, **kwargs)
+#    def save(self, *args, **kwargs):
+#        """
+#        Custom save functionality.
+#        (1) Upload document to OpenKM
+#        (2) Set the local model fields with the returned metadata from (1)
+#        *Note that locally stored files will be periodically deleted
+#        """
+#        if self.file and self.id is None:
+#            """ A new resource to be uploaded OpenKM """
+#            try:
+#                file_obj = self.file._get_file()
+#
+#                if 'taxonomy' in kwargs:
+#                    openkm_document = self.upload_to_openkm(file_obj, taxonomy)
+#                else:
+#                    openkm_document = self.upload_to_openkm(file_obj)
+#
+#                if openkm_document:
+#                    self.set_model_fields(openkm_document)
+#                    super(OpenKmDocument, self).save(*args, **kwargs)
+#                else:
+#                    raise Exception('None found when document object was expected')
+#                return
+#            except Exception,e:
+#                raise
+#
+#        super(OpenKmDocument, self).save(*args, **kwargs)
 
     def upload_to_openkm(self, file_obj, taxonomy=[]):
         """Uploads the document to the OpenKM server """
@@ -140,7 +140,7 @@ class OpenKmDocument(OpenKmMetadata):
         self.okm_filename = file_system.get_file_name_from_path(openkm_document.path)
 
     def __unicode__(self):
-        return self.okm_filename
+        return "%s" % self.okm_filename
 
     class Meta:
         abstract = True

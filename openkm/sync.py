@@ -170,8 +170,9 @@ class SyncProperties(object):
 
     def django_to_openkm(self, document):
         self.PROPERTY_GROUP_MAP = self.populate_property_group_map(settings.OPENKM['properties'], document)
-
+        print self.PROPERTY_GROUP_MAP
         for property_group in self.PROPERTY_GROUP_MAP:
+            print property_group
             if document.okm_uuid:
                 if not self.property_group.has_group(document.okm_path, property_group):
                     self.property_group.add_group(document.okm_path, property_group)
@@ -274,7 +275,6 @@ class SyncProperties(object):
         if document.is_published:
             gsaPublishedStatus = 'Published'
         map['okg:gsaProperties']['okp:gsaProperties.gsaPublishedStatus'].update({'value': gsaPublishedStatus})
-
         map['okg:gsaProperties']['okp:gsaProperties.startDate'].update({'value': document.okm_date_string(document.publish)})
         map['okg:gsaProperties']['okp:gsaProperties.expirationDate'].update({'value': document.okm_date_string(document.expire)})
         return map
@@ -300,15 +300,18 @@ class SyncFolderList(object):
         logger.info('Class: %s', klass)
 
         paths = self.get_list_of_root_paths()
+        print 'path: ', paths[0]
         #logger.info(paths)
 
         folders = self.traverse_folders(paths)
-
-
         self.save(folders, klass)
 
+#        for path in paths:
+#            folders = self.traverse_folders(paths[0])
+#            self.save(folders, klass)
+
     def get_list_of_root_paths(self):
-        return [self.category.get_category_root().path, self.repository.get_root_folder().path]
+        return [self.category.get_category_root().path]
 
     def traverse_folders(self, paths):
 
@@ -358,7 +361,7 @@ class SyncDocument(object):
 
 class DjangoToOpenKm(SyncDocument):
 
-    def execute(self, document, document_class):
+    def execute(self, document, folderlist_document_class, taxonomy=False):
         """
         Uploads a document to OpenKm
         :param document: a document object
@@ -368,12 +371,13 @@ class DjangoToOpenKm(SyncDocument):
         try:
             logger.debug(document)
             if not document.okm_uuid and document.file:
-                taxonomy = self.build_taxonomy(document)
+                if taxonomy:
+                    taxonomy = self.build_taxonomy(document)
                 okm_document = self.document_manager.create(document.file, taxonomy)
                 document.set_model_fields(okm_document)
                 document.save()
             self.keywords(document)
-            self.categories(document, document_class)
+            self.categories(document, folderlist_document_class)
             self.properties(document)
         except Exception, e:
             print e
@@ -430,7 +434,6 @@ class DjangoToOpenKm(SyncDocument):
         abstract base class
         """
         for related_model_class in settings.OPENKM['categories'].keys():
-            #import ipdb; ipdb.set_trace()
             # prepare the lists of AND and OR predicates for the query
             mapped_category_name = self.category_map(related_model_class.__name__)
             if not mapped_category_name:
@@ -441,7 +444,6 @@ class DjangoToOpenKm(SyncDocument):
             or_predicates = [field.__unicode__() for field in fields]
 
             # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
-
 
             # get the category UUIDs
             category_uuids = openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
