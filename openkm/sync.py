@@ -295,26 +295,21 @@ class SyncFolderList(object):
 
     def execute(self, klass):
         """
-        :param klass your django model class storing the OpenKM folder list
+        :param klass: OpenKMFolderlist class object
         """
-        logger.info('Class: %s', klass)
-
-        paths = self.get_list_of_root_paths()
-        print 'path: ', paths[0]
-        #logger.info(paths)
-
-        folders = self.traverse_folders(paths)
+        klass.objects.all().delete()
+        xpath_query = '/jcr:root/okm:categories//element(*)'
+        search = facades.SearchManager()
+        type = 'xpath'
+        folders = search.by_statement(xpath_query, type)
+        print('%s folders returned for query: %s' % (len(folders.item), xpath_query))
         self.save(folders, klass)
-
-#        for path in paths:
-#            folders = self.traverse_folders(paths[0])
-#            self.save(folders, klass)
+        print('%s folders now in local folder list' % klass.objects.count())
 
     def get_list_of_root_paths(self):
         return [self.category.get_category_root().path]
 
     def traverse_folders(self, paths):
-
         folders = []
         for path in paths:
             folders.extend(self.dir.traverse_folders(path))
@@ -322,18 +317,29 @@ class SyncFolderList(object):
         return folders
 
     def save(self, folders, klass):
-        for folder in folders:
-            try:
-                cl, created = klass.objects.get_or_create(okm_uuid=folder.uuid)
-                cl.okm_author = folder.author
-                cl.okm_created = folder.created
-                cl.okm_has_childs = folder.hasChilds
-                cl.okm_path = folder.path
-                cl.okm_permissions = folder.permissions
-                cl.okm_subscribed = folder.subscribed
-                cl.save()
-            except Exception, e:
-                print e
+        """
+        Iterate over the returned
+        """
+        if hasattr(folders, 'item') and isinstance(folders.item, list):
+            for folder in folders.item:
+                if hasattr(folder, 'folder'):
+                    folder = folder.folder
+                    try:
+                        cl = klass.objects.create(okm_uuid=folder.uuid)
+                        cl.okm_author = folder.author
+                        cl.okm_created = folder.created
+                        cl.okm_has_childs = folder.hasChilds
+                        cl.okm_path = folder.path
+                        cl.okm_permissions = folder.permissions
+                        cl.okm_subscribed = folder.subscribed
+                        cl.save()
+                    except UnicodeEncodeError, e:
+                        logging.exception(e)
+                    except Exception, e:
+                        logging.exception(e)
+                elif hasattr(folder, 'document'):
+                    logging.error('This is a document, not a folder')
+
 
 class SyncDocumentException(Exception):
     pass

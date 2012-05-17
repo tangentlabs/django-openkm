@@ -14,13 +14,14 @@ class OpenKmMetadata(models.Model):
     """
     okm_author = models.CharField(max_length=255, blank=True, null=True)
     okm_created = models.DateTimeField(auto_now_add=True)
-    okm_path = models.CharField(max_length=255, blank=True, null=True)
+    okm_path = models.CharField(max_length=1000, blank=True, null=True)
     okm_permissions = models.CharField(max_length=255, blank=True, null=True)
     okm_subscribed = models.CharField(max_length=255, blank=True, null=True)
     okm_uuid = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         abstract = True
+
 
 class OpenKmFolderListManager(models.Manager):
 

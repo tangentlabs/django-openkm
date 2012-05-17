@@ -195,8 +195,8 @@ class DirectoryListing(object):
                 for folder in folders_temp[0]:
                     self.folders.append(folder)
                     self.traverse_folders(path=folder.path)
-        except:
-            pass
+        except Exception, e:
+            logging.exception(e)
         return self.folders
 
     def get_all_documents_in_folder(self, folder_path=settings.OPENKM['configuration']['UploadRoot']):
