@@ -368,36 +368,35 @@ class SyncDocument(object):
 class DjangoToOpenKm(SyncDocument):
 
     def improved_execute(self, document, openkm_folderlist_class, taxonomy=False):
-        document = client.Document()
+        document_client = client.Document()
 
         document_manager = facades.DocumentManager()
         content = document_manager.convert_file_content_to_binary_for_transport(document.file)
 
-        data = document.create_document_data()
+        data = document_client.create_document_data()
 
         # populate the document with keywords and categories
         data.document.keywords = document.tags
         category_uuids = self.get_category_uuids(document, openkm_folderlist_class)
-        data.document.categories = [document.create_category_folder_object().uuid for c in category_uuids]
+        data.document.categories = [document_client.create_category_folder_object().uuid for c in category_uuids]
 
         # populate data and attach property groups
-        document.create_group_properties_object()
+        sync_properties = SyncProperties()
+        property_groups = sync_properties.populate_property_group_map(settings.OPENKM['properties'], document)
+        for property_group in property_groups:
 
-        document.create_document(content, data)
+            # create the groupProperty object and set its name
+            group_properties = document_client.create_group_properties_object()
+            group_properties.groupName = property_group
 
-        try:
-            logger.debug(document)
-            if not document.okm_uuid and document.file:
-                if taxonomy:
-                    taxonomy = self.build_taxonomy(document)
-                okm_document = self.document_manager.create(document.file, taxonomy)
-                document.set_model_fields(okm_document)
-                document.save()
-            self.keywords(document)
-            self.categories(document, folderlist_document_class)
-            self.properties(document)
-        except Exception, e:
-            print e
+            # now populate it's properties
+            # group_properties.properties =  [ list comprehesion to get all the properties ]
+
+            data.properties.append()
+
+
+        # go go go!
+        document_client.create_document(content, data)
 
     def execute(self, document, folderlist_document_class, taxonomy=False):
         """
