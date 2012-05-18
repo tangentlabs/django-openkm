@@ -222,6 +222,24 @@ class DocumentManager(object):
         content = self.convert_file_content_to_binary_for_transport(file_obj)
         return self.create_document_on_openkm(document, content)
 
+    def create_improved(self, file_obj, taxonomy=[]):
+        """
+        Uses Mariia's new web services
+        """
+        document = self.document.new()
+
+        if taxonomy:
+            # build the taxonomy
+            tax = Taxonomy(taxonomy)
+            document.path = tax.generate_path(taxonomy) + file_obj.name.split('/')[-1]
+        else:
+            # just create the path
+            document.path = self.create_path_from_filename(file_obj)
+
+        content = self.convert_file_content_to_binary_for_transport(file_obj)
+        return self.create_document_on_openkm(document, content)
+
+
     def create_path_from_filename(self, file_obj):
         file_system = FileSystem()
         filename = file_system.get_file_name_from_path(file_obj.__str__())
@@ -374,13 +392,13 @@ class Taxonomy(object):
 
         i = 0
         while i <= len(folders):
-            if i == 0:
+            if not i:
                 # first iteration so generate the full path
                 dependencies.append(self.generate_path(folders))
             else:
                 # generate path[n - 1] each iteration
                 dependencies.append(self.generate_path(folders[:-i]))
-            i = i + 1
+            i += 1
 
         return dependencies
 

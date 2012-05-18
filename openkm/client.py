@@ -283,6 +283,40 @@ class Document(BaseService):
         """
         return self.service.getPath(token=self.token, uuid=uuid)
 
+    """
+    Below are custom methods used for a modified instance of OpenKM.  These will not work
+    on the stable version.
+    """
+    def create_document_data_object(self):
+        return self.client.factory.create('documentData')
+
+    def create_group_properties_object(self):
+        return self.client.factory.create('groupProperties')
+
+    def create_category_folder_object(self):
+        return self.client.factory.create('documentData.document.categories')
+
+    def create_document(self, content, data):
+        """
+        Custom web service to upload a document and all associated metadata in a single call
+        :param content: file binary data
+        :param data: an instance of 'documentData'.  Use the convenience method create_document_data() to
+        instantiate an empty object
+        """
+        if not hasattr(self.service, 'createDocument'):
+            raise AttributeError('createDocument is not available on your instance of OpenKM')
+        return self.service.createDocument(token=self.token, content=content, data=data)
+
+    def update_document(self, data):
+        """
+        Custom web service to update a document and all associated metadata in a single call
+        :param data: an instance of 'documentData'.  Use the convenience method create_document_data() to
+        instantiate an empty object
+        """
+        if not hasattr(self.service, 'updateDocument'):
+            raise AttributeError('updateDocument is not available on your instance of OpenKM')
+        return self.service.updateDocument(token=self.token, data=data)
+
 class Search(BaseService):
     """Methods related to repository search. """
 
