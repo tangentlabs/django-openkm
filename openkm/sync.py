@@ -168,33 +168,96 @@ class SyncProperties(object):
         self.property = facades.Property()
         self.property_group = client.PropertyGroup()
 
-    def django_to_openkm(self, document):
-        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(settings.OPENKM['properties'], document)
-        print self.PROPERTY_GROUP_MAP
-        for property_group in self.PROPERTY_GROUP_MAP:
-            print property_group
-            if document.okm_uuid:
-                if not self.property_group.has_group(document.okm_path, property_group):
-                    self.property_group.add_group(document.okm_path, property_group)
+    def prepare_properties_dict(self, map, document):
+        """
+        @todo pass getter functions in to get the values
+        :param document: Django model object instance
+        :returns dict
+        """
+        map['okg:customProperties']['okp:customProperties.title'] = [document.name]
+        map['okg:customProperties']['okp:customProperties.description'] = [document.description]
+        map['okg:customProperties']['okp:customProperties.languages'] = [self.get_language(document)]
 
-                properties = self.property_group.get_properties(document.okm_path, property_group)
+        map['okg:salesProperties']['okp:salesProperties.assetType'] = [self.get_asset_type(document)]
 
-                # update the properties values and set them on OpenKM
-                updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
-                self.property_group.add_group(document.okm_path, property_group)
-                self.property_group.set_properties(document.okm_path, property_group, updated_properties)
+        map['okg:gsaProperties']['okp:gsaProperties.gsaPublishedStatus'] = [self.get_published_status(document)]
+        map['okg:gsaProperties']['okp:gsaProperties.startDate'] = [document.okm_date_string(document.publish)]
+        map['okg:gsaProperties']['okp:gsaProperties.expirationDate'] = [document.okm_date_string(document.expire)]
+        return map
 
-                self.trigger_workflow_scripts(document.okm_uuid)
+    def get_language(self, document):
+        if document.language.language in ('ro', 'hr') or not document.language:
+            return 'en'
+        else:
+            return document.language.language
 
-    def trigger_workflow_scripts(self, document_okm_uuid):
-        '''
-        Call Document.setProperties in order to trigger workflow scripts.  If this method is not called, the workflows
-        will not know that the document properties have been updated
-        '''
-        document = client.Document()
-        okm_document_path = document.get_path(document_okm_uuid)
-        okm_document = document.get_properties(okm_document_path)
-        document.set_properties(okm_document)
+    def get_asset_type(self, document):
+        parts = document.type.name.split()
+        parts[0] = parts[0].lower()
+        return ''.join(parts)
+
+    def get_published_status(self, document):
+        published_status = 'Not Published'
+        if document.is_published:
+            published_status = 'Published'
+        return published_status
+
+    def populate_property_group(self, properties_dict):
+        """
+        :param properties_dict dict
+        A dict with property group names as keys, the value for each property group
+        should be a dict containing its properties and values
+        {'property group name':
+            { property name : values, ... }
+        :returns a list groupProperties objects each populated with property names and values
+        """
+        property_groups = []
+        for property_group in properties_dict:
+            document = client.Document()
+            property_group_obj = document.create_group_properties_object()
+            property_group_obj.groupName = property_group
+            for property_name, value in properties_dict[property_group].items():
+                property_obj = document.create_group_property_object()
+                property_obj.name = property_name
+                property_obj.values = [value]
+                property_group_obj.properties.append(property_obj)
+            property_groups.append(property_group_obj)
+
+        return property_groups
+
+    def django_to_openkm_improved(self, document):
+        map = settings.OPENKM['properties']
+        properties_dict = self.prepare_properties_dict(map, document)
+        return self.populate_property_group(properties_dict)
+
+
+#    def django_to_openkm(self, document):
+#        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(settings.OPENKM['properties'], document)
+#        print self.PROPERTY_GROUP_MAP
+#        for property_group in self.PROPERTY_GROUP_MAP:
+#            print property_group
+#            if document.okm_uuid:
+#                if not self.property_group.has_group(document.okm_path, property_group):
+#                    self.property_group.add_group(document.okm_path, property_group)
+#
+#                properties = self.property_group.get_properties(document.okm_path, property_group)
+#
+#                # update the properties values and set them on OpenKM
+#                updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
+#                self.property_group.add_group(document.okm_path, property_group)
+#                self.property_group.set_properties(document.okm_path, property_group, updated_properties)
+#
+#                self.trigger_workflow_scripts(document.okm_uuid)
+#
+#    def trigger_workflow_scripts(self, document_okm_uuid):
+#        '''
+#        Call Document.setProperties in order to trigger workflow scripts.  If this method is not called, the workflows
+#        will not know that the document properties have been updated
+#        '''
+#        document = client.Document()
+#        okm_document_path = document.get_path(document_okm_uuid)
+#        okm_document = document.get_properties(okm_document_path)
+#        document.set_properties(okm_document)
 
 
     def openkm_to_django(self, document):
@@ -262,13 +325,17 @@ class SyncProperties(object):
         map['okg:customProperties']['okp:customProperties.description'].update({'value': document.description})
 
         # must set to english languages not supported in OpenKM
-        if document.language.language in ('ro', 'hr'):
+        if document.language.language in ('ro', 'hr') or not document.language:
             language = 'en'
         else:
             language = document.language.language
         map['okg:customProperties']['okp:customProperties.languages'].update({'value': language})
 
-        map['okg:salesProperties']['okp:salesProperties.assetType'].update({'value': document.type.name})
+
+        parts = document.type.name.split()
+        parts[0] = parts[0].lower()
+        asset_type = ''.join(parts)
+        map['okg:salesProperties']['okp:salesProperties.assetType'].update({'value': asset_type})
 
         # published status has two values that GSA should set
         gsaPublishedStatus = 'Not Published'
@@ -278,6 +345,10 @@ class SyncProperties(object):
         map['okg:gsaProperties']['okp:gsaProperties.startDate'].update({'value': document.okm_date_string(document.publish)})
         map['okg:gsaProperties']['okp:gsaProperties.expirationDate'].update({'value': document.okm_date_string(document.expire)})
         return map
+
+
+
+
 
 
 class SyncFolderList(object):
@@ -368,35 +439,48 @@ class SyncDocument(object):
 class DjangoToOpenKm(SyncDocument):
 
     def improved_execute(self, document, openkm_folderlist_class, taxonomy=False):
+        """
+        Uploads a document in a single web service call.
+        Important -- This relies on a modified OpenKM instance, use
+        execute() if you are using standard OpenKM
+        """
         document_client = client.Document()
 
-        document_manager = facades.DocumentManager()
-        content = document_manager.convert_file_content_to_binary_for_transport(document.file)
-
-        data = document_client.create_document_data()
+        # create a new data instance (contains a document instance and properties
+        data = document_client.create_document_data_object()
+        filename = self._get_file_name(document)
+        data.document.path = '%s%s' % (settings.OPENKM['configuration']['UploadRoot'], filename)
 
         # populate the document with keywords and categories
-        data.document.keywords = document.tags
-        category_uuids = self.get_category_uuids(document, openkm_folderlist_class)
-        data.document.categories = [document_client.create_category_folder_object().uuid for c in category_uuids]
+        data.document.keywords = document.tags.split(',')
+
+        # populate categories
+        categories = self.get_categories(document, openkm_folderlist_class)
+        data.document.categories = [document_client.create_category_folder_object(c.okm_path) for c in categories]
+
+        # initialise list nodes
+        data.document.notes = []
+        data.document.subscriptors = []
 
         # populate data and attach property groups
+        data.properties = []
         sync_properties = SyncProperties()
-        property_groups = sync_properties.populate_property_group_map(settings.OPENKM['properties'], document)
-        for property_group in property_groups:
+        data.properties = sync_properties.django_to_openkm_improved(document)
 
-            # create the groupProperty object and set its name
-            group_properties = document_client.create_group_properties_object()
-            group_properties.groupName = property_group
-
-            # now populate it's properties
-            # group_properties.properties =  [ list comprehesion to get all the properties ]
-
-            data.properties.append()
-
+        logging.debug(data)
 
         # go go go!
-        document_client.create_document(content, data)
+        if not document.okm_uuid:
+            document_manager = facades.DocumentManager()
+            content = document_manager.convert_file_content_to_binary_for_transport(document.file)
+            okm_document = document_client.create_document(content, data)
+        else:
+            okm_document = document_client.update_document(data)
+        document.set_model_fields(okm_document)
+        document.save()
+
+    def _get_file_name(self, document):
+        return document.file.name.split('/')[-1:][0]
 
     def execute(self, document, folderlist_document_class, taxonomy=False):
         """
@@ -480,6 +564,28 @@ class DjangoToOpenKm(SyncDocument):
             # get the category UUIDs
             category_uuids += openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
         return category_uuids
+
+    def get_categories(self, document, openkm_folderlist_class):
+        """
+        Returns a queryset of the OpenKMFolderlist objects that match the categories of the document,
+        where the mapping comes from OPENKM settings dict
+        """
+        categories = []
+        for related_model_class in settings.OPENKM['categories'].keys():
+            # prepare the lists of AND and OR predicates for the query
+            mapped_category_name = self.category_map(related_model_class.__name__)
+            if not mapped_category_name:
+                print 'Category not found'
+                continue
+            and_predicates = ['categories', mapped_category_name]
+            fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
+            or_predicates = [field.__unicode__() for field in fields]
+
+            # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
+
+            # get the category UUIDs
+            categories += openkm_folderlist_class.objects.get_custom_queryset(and_predicates, or_predicates)
+        return categories
 
     def categories(self, document, openkm_folderlist_class, update_individually=True):
         """

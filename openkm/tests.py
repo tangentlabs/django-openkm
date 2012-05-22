@@ -1,7 +1,8 @@
+import datetime
 from django.test import TestCase
 from django.conf import settings
 
-import client, facades, models, sync
+import client, facades, models, sync, utils
 
 class ClientTest(TestCase):
     """ Tests of functions and settings """
@@ -514,3 +515,106 @@ class TaxonomyTest(TestCase):
     def test_build_path(self):
         dependencies = self.taxonomy.generate_path_dependencies(self.folders)
         self.taxonomy.build_path(dependencies)
+
+
+def get_content_for_upload():
+    """
+    Generates a file like object with random data and returns it in a form ready to be passed
+    over the wire via SOAP
+    """
+    return utils.make_file_java_byte_array_compatible(open('manage.py', 'r'))
+
+
+class CustomWebServicesTest(TestCase):
+    """
+    Test the custom web services added for efficiency.  Note that these are not available
+    in standard OpenKM
+    """
+    def setUp(self):
+        # get a file for testing
+        self.document = client.Document()
+        self.content = get_content_for_upload()
+        self.data = self._get_data()
+
+    def test_create_document_data_object(self):
+        """
+        Should return a new instance of documentData (a custom class which contains
+        an instance of Document and also multiple PropertyGroups with Properties
+        """
+        data = self.document.create_document_data_object()
+        msg = "%s was not expected %s" % (data.__class__.__name__, 'documentData')
+        self.assertEquals(data.__class__.__name__, 'documentData', msg)
+
+    def test_create_group_properties_object(self):
+        """
+        Should return a new instance of GroupProperties
+        """
+        data = self.document.create_group_properties_object()
+        msg = "%s was not expected %s" % (data.__class__.__name__, 'groupProperties')
+        self.assertEquals(data.__class__.__name__, 'groupProperties', msg)
+
+    def test_create_category_folder_object(self):
+        """
+        Should return an instance of Folder
+        """
+        path = "/okm:categories/Industries/Chemicals"
+        data = self.document.create_category_folder_object(path)
+        msg = "%s was not expected %s" % (data.__class__.__name__, 'folder')
+        self.assertEquals(data.__class__.__name__, 'folder', msg)
+
+    def _get_data(self):
+        """
+        Returns a populated data instance to be passed as a param to Document.create_document()
+        """
+        data = self.document.create_document_data_object()
+        data.document.path = '%s%s' % (settings.OPENKM['configuration']['UploadRoot'], '123.pdf')
+
+        # add keywords
+        data.document.keywords += ['one', 'two', 'three']
+
+        # add categories
+        path = "/okm:categories/Industries/Chemicals"
+        category = self.document.create_category_folder_object(path)
+        data.document.categories.append(category)
+
+        # initialise list nodes
+        data.document.notes = []
+        data.document.subscriptors = []
+
+        # add properties
+        sync_properties = sync.SyncProperties()
+        properties = sync_properties._populate_property_group(self._get_properties_dict())
+        data.properties = self.populate_property_group(properties)
+
+        return data
+
+
+
+    def _get_properties_dict(self):
+        model = models.OpenKmDocument()
+        today = model.okm_date_string(datetime.date.today())
+        one_year_from_now = model.okm_date_string(datetime.date.today() + datetime.timedelta(365))
+        return {
+            'okg:customProperties': {
+                'okp:customProperties.title': 'One Flew Over...',
+                'okp:customProperties.description': 'One Flew Over a description',
+                'okp:customProperties.languages': 'en',
+                },
+            'okg:salesProperties': {
+                'okp:salesProperties.assetType': 'solutionMaps',
+                },
+            'okg:gsaProperties': {
+                'okp:gsaProperties.gsaPublishedStatus': 'Published', # Published || Not Published || Awaiting moderation
+                'okp:gsaProperties.startDate': today,
+                'okp:gsaProperties.expirationDate': one_year_from_now,
+                }
+        }
+
+    def test_create_document(self):
+        document = client.Document()
+        okm_document = document.create_document(self.content, self.data)
+        print okm_document
+
+    def test_update_document(self):
+        document = client.Document()
+        document.update_document(self.data)

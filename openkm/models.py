@@ -31,8 +31,23 @@ class OpenKmFolderListManager(models.Manager):
         :param or_predicates: list of OR query arguments eg. ['Latin-America', 'EMEA']
         :returns a list of uuids
         """
+        try:
+            query_set = self.get_paths_from_predicates(and_predicates, or_predicates)
+            if not query_set:
+                return []
+            return [resource.okm_uuid for resource in query_set.all()]
+        except TypeError, e:
+            logging.exception(e)
+        except AttributeError, e:
+            logging.exception(e)
 
 
+    def get_custom_queryset(self, and_predicates, or_predicates):
+        """
+        :param and_predicates: list of AND query arguments eg. ['category', 'Region']
+        :param or_predicates: list of OR query arguments eg. ['Latin-America', 'EMEA']
+        :returns queryset
+        """
         if and_predicates:
             and_predicates_list = self._build_and_predicate_list(and_predicates)
             and_list = [Q(x) for x in and_predicates_list]
@@ -55,11 +70,11 @@ class OpenKmFolderListManager(models.Manager):
             if and_list:
                 query_set = query_set.filter(and_list)
 
-            return [resource.okm_uuid for resource in query_set]
+            return query_set
         except TypeError, e:
-            print e
+            logging.exception(e)
         except AttributeError, e:
-            print e
+            logging.exception(e)
 
     def _build_and_predicate_list(self, arguments):
         args = []

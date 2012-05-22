@@ -293,8 +293,13 @@ class Document(BaseService):
     def create_group_properties_object(self):
         return self.client.factory.create('groupProperties')
 
-    def create_category_folder_object(self):
-        return self.client.factory.create('documentData.document.categories')
+    def create_group_property_object(self):
+        return self.client.factory.create('groupProperties.properties')
+
+    def create_category_folder_object(self, path):
+        folder = self.client.factory.create('documentData.document.categories')
+        folder.path = path
+        return folder
 
     def create_document(self, content, data):
         """
