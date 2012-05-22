@@ -77,4 +77,7 @@ def remove_trailing_slash(str):
     else:
         return str
 
+def remove_none_elements_from_list(list):
+    return [e for e in list if e != None]
+
 

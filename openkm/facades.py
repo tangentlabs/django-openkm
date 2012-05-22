@@ -79,7 +79,11 @@ class Keyword(object):
         :param path: OpenKM node path of document
         """
         document = self.document.get_properties(path)
-        return document.keywords
+        try:
+            return document.keywords
+        except AttributeError, e:
+            logging.exception(e)
+            return None
 
 
 class FileSystem(object):
@@ -182,6 +186,7 @@ class DirectoryListing(object):
         return self.documents
 
     def traverse_folders(self, path):
+        print path
         folders_temp = self.folder.get_children(path)
 
         # if there are child folders, traverse them recursively
@@ -190,8 +195,8 @@ class DirectoryListing(object):
                 for folder in folders_temp[0]:
                     self.folders.append(folder)
                     self.traverse_folders(path=folder.path)
-        except:
-            pass
+        except Exception, e:
+            logging.exception(e)
         return self.folders
 
     def get_all_documents_in_folder(self, folder_path=settings.OPENKM['configuration']['UploadRoot']):
@@ -234,6 +239,24 @@ class DocumentManager(object):
         r = client.Repository()
         return r.has_node(path)
 
+    def create_improved(self, file_obj, taxonomy=[]):
+        """
+        Uses Mariia's new web services
+        """
+        document = self.document.new()
+
+        if taxonomy:
+            # build the taxonomy
+            tax = Taxonomy(taxonomy)
+            document.path = tax.generate_path(taxonomy) + file_obj.name.split('/')[-1]
+        else:
+            # just create the path
+            document.path = self.create_path_from_filename(file_obj)
+
+        content = self.convert_file_content_to_binary_for_transport(file_obj)
+        return self.create_document_on_openkm(document, content)
+
+
     def create_path_from_filename(self, file_obj):
         file_system = FileSystem()
         filename = file_system.get_file_name_from_path(file_obj.__str__())
@@ -241,7 +264,8 @@ class DocumentManager(object):
         return "%s%s" % (settings.OPENKM['configuration']['UploadRoot'], filename)
 
     def create_document_on_openkm(self, document, content):
-        return self.document.create(document, content)
+        okm_document = self.document.create(document, content)
+        return okm_document
 
     def get_path(self, uuid):
         return self.document.get_path(uuid)
@@ -272,23 +296,49 @@ class Property(object):
         """
         for property in properties[0]:
             if hasattr(property, 'label') and property.name in new_values.keys():
-                logging.info('Found %s to %s' % (property.name, new_values[property.name]))
+                print('Found %s to %s' % (property.name, new_values[property.name]))
                 if hasattr(property, 'options'):
                     try:
+                        value = new_values[property.name]['value']
+                        print 'Property name: ', property.name
+                        if property.name == 'okp:customProperties.languages':
+                            value = self.get_language_label(value)
+                        print 'Value: ', value
                         property.options = self.update_options_list(property.options, new_values[property.name]['value'])
                     except KeyError, e:
-                        logging.exception(e)
+                        print(e)
                 else:
-                    logging.info('Updating %s to %s' % (property.name, new_values[property.name]))
+                    print('Updating %s to %s' % (property.name, new_values[property.name]))
                     property.value = new_values[property.name]['value']
 
         return properties
 
+    def get_language_label(self, language_code):
+        map = (
+            ('en', 'English'),
+            ('de', 'German'),
+            ('es', 'Spanish (Spain)*'),
+            ('fr', 'French'),
+            ('pt', 'Portuguese'),
+            ('zh', 'Chinese'),
+            ('ko', 'Korean'),
+            ('ja', 'Japanese'),
+            ('ru', 'Russian'),
+            ('ro', 'Romanian'),
+            )
+        map = dict(map)
+
+        try:
+            return map[language_code]
+        except:
+            return 'English'
+
     def update_options_list(self, options, new_value):
        for option in options:
-           if option.label == new_value:
+           print option.label, '==', new_value
+           if (option.label == new_value) or (option.value == new_value):
                option.selected = True
-               logging.info('Updating option[%s].selected to True', option.label)
+               print('Updating option[%s].selected to True', option.label)
            else:
                option.selected = False
 
@@ -356,13 +406,13 @@ class Taxonomy(object):
 
         i = 0
         while i <= len(folders):
-            if i == 0:
+            if not i:
                 # first iteration so generate the full path
                 dependencies.append(self.generate_path(folders))
             else:
                 # generate path[n - 1] each iteration
                 dependencies.append(self.generate_path(folders[:-i]))
-            i = i + 1
+            i += 1
 
         return dependencies
 
