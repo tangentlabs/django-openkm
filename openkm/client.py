@@ -101,9 +101,6 @@ class Auth(BaseService):
         pass
 
 
-
-#from .utils import try_except
-
 class Document(BaseService):
     """Methods related to document management. """
 
@@ -322,6 +319,7 @@ class Document(BaseService):
         if not hasattr(self.service, 'updateDocument'):
             raise AttributeError('updateDocument is not available on your instance of OpenKM')
         return self.service.updateDocument(token=self.token, data=data)
+
 
 class Search(BaseService):
     """Methods related to repository search. """

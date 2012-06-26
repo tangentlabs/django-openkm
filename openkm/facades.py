@@ -17,6 +17,7 @@ class Session(object):
     def close(self):
         self.auth.logout()
 
+
 class Category(object):
 
     def __init__(self):
@@ -133,6 +134,7 @@ class FileSystem(object):
             path = path.replace(map[1],map[0])
         return path
 
+
 class FolderManager(client.Folder):
 
     def __init__(self):
@@ -141,6 +143,7 @@ class FolderManager(client.Folder):
     def create(self, folder_obj):
         folder_obj.path = utils.remove_trailing_slash(folder_obj.path)
         super(FolderManager, self).create(folder_obj)
+
 
 class DirectoryListing(object):
 
@@ -259,10 +262,12 @@ class DocumentManager(object):
     def get_properties(self, doc_path):
         return self.document.get_properties(doc_path)
 
+
 class RepositoryManager(client.Repository):
 
     def __init__(self):
         super(RepositoryManager, self).__init__(class_name='Repository')
+
 
 class Property(object):
 
@@ -333,7 +338,6 @@ class Property(object):
     def update_document_on_openkm(self, node_path, group_name, properties):
         self.property_group.remove_group(node_path, group_name)
         return self.property_group.set_properties(node_path, group_name, properties)
-
 
 
 class SearchManager(client.Search):

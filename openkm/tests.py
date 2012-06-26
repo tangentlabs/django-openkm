@@ -7,6 +7,7 @@ import suds
 
 import client, facades, models, sync, utils
 
+
 class ClientTest(TestCase):
     """ Tests of functions and settings """
 
@@ -32,6 +33,7 @@ class FolderTest(TestCase):
     def test_get_children(self):
         children = self.folder.get_children('/okm:root/')
         self.assertTrue(hasattr(children, 'item'))
+
 
 class AuthTest(TestCase):
 
@@ -154,8 +156,10 @@ class DocumentTest(TestCase):
     def tearDown(self):
         self.doc.delete(self.test_doc_path)
 
+
 class PropertyTest(TestCase):
     pass
+
 
 class PropertyGroupTest(TestCase):
 
@@ -212,6 +216,7 @@ def delete_test_document_on_openkm():
     d = client.Document()
     d.delete(get_test_document_path())
 
+
 class NoteTest(TestCase):
 
     def setUp(self):
@@ -251,7 +256,6 @@ class NoteTest(TestCase):
 
     def tearDown(self):
         delete_test_document_on_openkm()
-
 
 
 class KeywordTest(TestCase):
@@ -410,62 +414,6 @@ class MockResource(object):
                 _set.add(object)
 
         return main_model
-
-
-
-#class SyncCategoriesTest(TestCase):
-#
-#    fixtures = []
-#
-#    def setUp(self):
-#        self.sync_categories = sync.SyncCategories()
-#        self.category = facades.Category()
-#        m = MockResource()
-#        self.r = m.generate_test_resource()
-#
-#    def test_category_map(self):
-#        """ Check for existence only as content may change """
-#        self.assertTrue(hasattr(self.sync_categories, 'MODEL_CATEGORY_MAP'), msg="Category map dict not found")
-#
-#    def test_get_child_categories(self):
-#        """
-#        Returns a list of folder objects which are the child categories of the parent given as param
-#        """
-#
-#        # add a category to root so we will return results in the next step
-#        category_root_path = self.category.get_category_root().path
-#        mock_category_path = self.category.construct_valid_path_string(category_root_path, 'DummyXYZ')
-#        mock_category = self.category.create(mock_category_path)
-#
-#        child_categories = self.sync_categories.get_child_categories(category_root_path)
-#
-#        has_child = False
-#        for child in child_categories.item:
-#            if child.path == mock_category.path:
-#                has_child = True
-#        self.assertTrue(has_child, msg="The mock category %s was not found in the returned \
-#        child categories of %s" % (mock_category.path, category_root_path))
-#
-#        # clean up
-#        self.category.remove(mock_category.path)
-#
-#    def test_create_categories_from_django_model(self):
-#        #print self.sync_categories.create_categories_from_django_model(Resource, 'Test')
-#        pass
-#
-#    def test_django_to_openkm(self):
-#        for django_model, openkm_model in self.sync_categories.MODEL_CATEGORY_MAP.items():
-#            print django_model, openkm_model
-#
-#    def test_openkm_to_django(self):
-#        pass
-#
-#    def test_get_categories_from_gsa(self):
-#        for model in self.sync_categories.MODEL_CATEGORY_MAP.keys():
-#            model_name = model.__name__.lower()
-#            print self.sync_categories.get_related_objects_from_model(self.r, model_name)
-
-
 
 
 class DirectoryListingTest(TestCase):

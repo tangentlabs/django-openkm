@@ -233,36 +233,6 @@ class SyncProperties(object):
         properties_dict = self.prepare_properties_dict(map, document)
         return self.populate_property_group(properties_dict)
 
-
-#    def django_to_openkm(self, document):
-#        self.PROPERTY_GROUP_MAP = self.populate_property_group_map(settings.OPENKM['properties'], document)
-#        print self.PROPERTY_GROUP_MAP
-#        for property_group in self.PROPERTY_GROUP_MAP:
-#            print property_group
-#            if document.okm_uuid:
-#                if not self.property_group.has_group(document.okm_path, property_group):
-#                    self.property_group.add_group(document.okm_path, property_group)
-#
-#                properties = self.property_group.get_properties(document.okm_path, property_group)
-#
-#                # update the properties values and set them on OpenKM
-#                updated_properties = self.property.update_document_properties(properties, self.PROPERTY_GROUP_MAP[property_group])
-#                self.property_group.add_group(document.okm_path, property_group)
-#                self.property_group.set_properties(document.okm_path, property_group, updated_properties)
-#
-#                self.trigger_workflow_scripts(document.okm_uuid)
-#
-#    def trigger_workflow_scripts(self, document_okm_uuid):
-#        '''
-#        Call Document.setProperties in order to trigger workflow scripts.  If this method is not called, the workflows
-#        will not know that the document properties have been updated
-#        '''
-#        document = client.Document()
-#        okm_document_path = document.get_path(document_okm_uuid)
-#        okm_document = document.get_properties(okm_document_path)
-#        document.set_properties(okm_document)
-
-
     def openkm_to_django(self, document):
         self.PROPERTY_GROUP_MAP = settings.OPENKM['properties']
         document_property_groups = self.property.get_property_groups_for_document(document.okm_path)
@@ -350,10 +320,6 @@ class SyncProperties(object):
         return map
 
 
-
-
-
-
 class SyncFolderList(object):
     """
     Local storage of OpenKM folder metadata
@@ -418,6 +384,7 @@ class SyncFolderList(object):
 class SyncDocumentException(Exception):
     pass
 
+
 class SyncDocument(object):
     """
     Syncs a document object to OpenKM
@@ -436,7 +403,6 @@ class SyncDocument(object):
 
     def get_upload_root(self):
         return settings.OPENKM['configuration']['UploadRoot']
-
 
 
 class DjangoToOpenKm(SyncDocument):
@@ -628,8 +594,6 @@ class DjangoToOpenKm(SyncDocument):
         except KeyError:
             print model_class_name, ' not found'
             return False
-
-
 
 
 class OpenKmToDjango(SyncDocument):
