@@ -26,21 +26,18 @@ OPENKM_WSDLS = {
 
 def try_except(fn):
     """
-    A decorator to catch suds exceptions and rethrow custom exceptions to mirror the actual
-    exceptions raised by OpenKM
-    @todo allow each function to define the expected exceptions raised
-    """
+        A decorator to catch suds exceptions and rethrow custom excpetions to mirror the actual exceptions raised by OpenKM
+        @todo allow each function to define the expected exceptions raised
+       """
     def wrapped(*args, **kwargs):
         try:
-            return fn(*args, **kwargs)
+            fn(*args, **kwargs)
         except Exception, e:
             et, ei, tb = sys.exc_info()
             parser = exceptions.ExceptionParser()
             raised_exception = parser.get_raised_exception_class_name(e)
             exception = getattr(exceptions, raised_exception)
-            logging.exception(e)
-            raise exception, exception(e), tb7
-
+            raise exception, exception(e), tb
     return wraps(fn)(wrapped)
 
 def get_service(class_name):
@@ -54,7 +51,9 @@ def get_token():
     auth.login()
     return auth.token
 
+
 class BaseService(object):
+
     def __init__(self, start_session=True, class_name=None):
         if not class_name:
             class_name = self.__class__.__name__
@@ -70,8 +69,7 @@ class Auth(BaseService):
     def __init__(self):
         super(Auth, self).__init__(start_session=False)
 
-    def login(self, user=settings.OPENKM['configuration']['User'],
-              password=settings.OPENKM['configuration']['Password']):
+    def login(self, user=settings.OPENKM['configuration']['User'], password=settings.OPENKM['configuration']['Password']):
         self.token = self.service.login(user=user, password=password)
 
     def logout(self):
@@ -103,8 +101,11 @@ class Auth(BaseService):
         pass
 
 
+
+#from .utils import try_except
+
 class Document(BaseService):
-    """Methods related to document management """
+    """Methods related to document management. """
 
     def new(self):
         """
@@ -112,14 +113,13 @@ class Document(BaseService):
         """
         return self.client.factory.create('document')
 
-    @try_except
     def create(self, doc, content):
         """
-        Create a new document in the repository.
-        :param Document object (use self.new())
-        :param content Java byte[] compatible (use make_file_java_byte_array_compatible())
-        :return A document object with the properties of the new created document.
-        """
+            Create a new document in the repository.
+            :param Document object (use self.new())
+            :param content Java byte[] compatible (use make_file_java_byte_array_compatible())
+            :return A document object with the properties of the new created document.
+            """
         return self.service.create(token=self.token, doc=doc, content=content)
 
     def delete(self, doc_path):
@@ -283,7 +283,7 @@ class Document(BaseService):
         """
         return self.service.getPath(token=self.token, uuid=uuid)
 
-	"""
+    """
     Below are custom methods used for a modified instance of OpenKM.  These will not work
     on the stable version.
     """
@@ -311,6 +311,7 @@ class Document(BaseService):
         if not hasattr(self.service, 'createDocument'):
             raise AttributeError('createDocument is not available on your instance of OpenKM')
         return self.service.createDocument(token=self.token, content=content, data=data)
+
 
     def update_document(self, data):
         """
@@ -382,7 +383,7 @@ class Bookmark(BaseService):
 
 
 class Note(BaseService):
-    """Methods related to document notes management """
+    """Methods related to document notes management. """
 
     def add(self, node_path, text):
         """Add a note to a document. """
@@ -406,6 +407,7 @@ class Note(BaseService):
 
 
 class Folder(BaseService):
+
     def new(self):
         return self.client.factory.create('folder')
 
@@ -480,14 +482,14 @@ class PropertyGroup(BaseService):
         return self.service.getProperties(token=self.token, nodePath=node_path, grpName=group_name)
 
     def set_properties(self, node_path, group_name, properties):
-        return self.service.setProperties(token=self.token, nodePath=node_path, grpName=group_name,
-            properties=properties)
+        return self.service.setProperties(token=self.token, nodePath=node_path, grpName=group_name, properties=properties)
 
     def has_group(self, node_path, group_name):
         return self.service.hasGroup(token=self.token, nodePath=node_path, grpName=group_name)
 
 
 class Repository(BaseService):
+
     def get_root_folder(self):
         return self.service.getRootFolder(self.token)
 

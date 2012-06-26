@@ -208,36 +208,19 @@ class DocumentManager(object):
     def __init__(self):
         self.document = client.Document()
 
-    def create(self, file_obj, taxonomy=None):
-        if not taxonomy:
-            taxonomy = []
+    def create(self, file_obj, taxonomy=[]):
         document = self.document.new()
-        document.path = self.create_path_from_file(file_obj, taxonomy=[])
-        content = utils.make_file_java_byte_array_compatible(file_obj)
-        return self.create_document_on_openkm(document, content)
 
-    def create_path_from_file(self, file_obj, taxonomy=[]):
-        """
-        :param f: file object
-        """
         if taxonomy:
             # build the taxonomy
             tax = Taxonomy(taxonomy)
-            return tax.generate_path(taxonomy) + file_obj.name.split('/')[-1]
+            document.path = tax.generate_path(taxonomy) + file_obj.name.split('/')[-1]
         else:
             # just create the path
-            return self.create_path_from_filename(file_obj.name.split('/')[-1])
+            document.path = self.create_path_from_filename(file_obj)
 
-    def document_exists(self, file_obj):
-        """
-        Given a file object, checks if the file already exists on OpenKM
-        """
-#        if not isinstance(file_obj, file):
-#            raise TypeError('file_obj must be a File object.  Instead got: %s' % type(file_obj))
-
-        path = self.create_path_from_file(file_obj)
-        r = client.Repository()
-        return r.has_node(path)
+        content = self.convert_file_content_to_binary_for_transport(file_obj)
+        return self.create_document_on_openkm(document, content)
 
     def create_improved(self, file_obj, taxonomy=[]):
         """
@@ -262,6 +245,9 @@ class DocumentManager(object):
         filename = file_system.get_file_name_from_path(file_obj.__str__())
         logging.debug("Derived filename: %s", filename)
         return "%s%s" % (settings.OPENKM['configuration']['UploadRoot'], filename)
+
+    def convert_file_content_to_binary_for_transport(self, file_obj):
+        return utils.make_file_java_byte_array_compatible(file_obj)
 
     def create_document_on_openkm(self, document, content):
         okm_document = self.document.create(document, content)

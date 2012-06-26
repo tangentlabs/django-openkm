@@ -1,5 +1,4 @@
 import datetime
-import StringIO
 
 from django.test import TestCase
 from django.conf import settings
@@ -521,31 +520,6 @@ class TaxonomyTest(TestCase):
         self.taxonomy.build_path(dependencies)
 
 
-def get_test_file_object():
-    f = StringIO.StringIO('I made lasers for NASA')
-    f.name = 'coverage.sh'
-    return f
-
-class DocumentExceptionTest(TestCase):
-
-    def setUp(self):
-        self.dm = facades.DocumentManager()
-        self.f = get_test_file_object()
-
-    def test_create(self):
-        # create the file if it doesn't exist
-        if not self.dm.document_exists(get_test_file_object()):
-            path = self.dm.create(get_test_file_object()).path
-        else:
-            path = self.dm.create_path_from_file(get_test_file_object())
-
-        # should raise ItemExistsException
-        self.assertRaises(exceptions.ItemExistsException, self.dm.create, get_test_file_object())
-
-        # cleanup
-        self.dm.document.delete(path)
-
-
 def get_content_for_upload():
     """
     Generates a file like object with random data and returns it in a form ready to be passed
@@ -612,8 +586,8 @@ class CustomWebServicesTest(TestCase):
 
         # add properties
         sync_properties = sync.SyncProperties()
-        properties = sync_properties._populate_property_group(self._get_properties_dict())
-        data.properties = self.populate_property_group(properties)
+        properties = self._get_properties_dict()
+        data.properties = sync_properties.populate_property_group(properties)
 
         return data
 
@@ -640,11 +614,12 @@ class CustomWebServicesTest(TestCase):
         }
 
     def test_create_document(self):
-        document = client.Document()
-        okm_document = document.create_document(self.content, self.data)
-        print okm_document
+        try:
+            document = client.Document()
+            okm_document = document.create_document(self.content, self.data)
+        except suds.WebFault, e:
+            print 'Caught suds.WebFault.  Document already exists on server: ', e.message
 
     def test_update_document(self):
         document = client.Document()
         document.update_document(self.data)
-

@@ -6,7 +6,7 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q
 
-import facades, exceptions
+import facades
 
 class OpenKmMetadata(models.Model):
     """
@@ -32,10 +32,10 @@ class OpenKmFolderListManager(models.Manager):
         :returns a list of uuids
         """
         try:
-            query_set = self.get_paths_from_predicates(and_predicates, or_predicates)
+            query_set = self.get_custom_queryset(and_predicates, or_predicates)
             if not query_set:
                 return []
-            return [resource.okm_uuid for resource in query_set.all()]
+            return [resource.okm_uuid for resource in query_set]
         except TypeError, e:
             logging.exception(e)
         except AttributeError, e:
@@ -137,23 +137,22 @@ class OpenKmDocument(OpenKmMetadata):
 
     def upload_to_openkm(self, file_obj, taxonomy=[]):
         """Uploads the document to the OpenKM server """
-        try:
-            document_manager = facades.DocumentManager()
-            return document_manager.create(file_obj, taxonomy=taxonomy)
-        except exceptions.ItemExistsException, e:
-            raise Exception('Document already exists')
+        document_manager = facades.DocumentManager()
+        return document_manager.create(file_obj, taxonomy=taxonomy)
 
     def set_model_fields(self, openkm_document):
         """
         Set the model's fields values with the meta data returned
         by OpenKM to identify the resource
         """
-        self.okm_author = openkm_document.author
+        self.okm_author = openkm_document.author if openkm_document.author else ''
         self.okm_created = openkm_document.created
         self.okm_path = openkm_document.path
         self.okm_permissions = openkm_document.permissions
         self.okm_subscribed = openkm_document.subscribed
         self.okm_uuid = openkm_document.uuid
+        if hasattr(self, 'mime_type'):
+            self.mime_type = openkm_document.mimeType
 
         file_system = facades.FileSystem()
         self.okm_filename = file_system.get_file_name_from_path(openkm_document.path)

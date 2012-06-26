@@ -186,15 +186,18 @@ class SyncProperties(object):
         return map
 
     def get_language(self, document):
-        if document.language.language in ('ro', 'hr') or not document.language:
+        if not hasattr(document, 'language') or not hasattr(document.language, 'language') or document.language.language in ('ro', 'hr') or not document.language:
             return 'en'
         else:
             return document.language.language
 
     def get_asset_type(self, document):
-        parts = document.type.name.split()
-        parts[0] = parts[0].lower()
-        return ''.join(parts)
+        if document.type:
+            parts = document.type.name.split()
+            parts[0] = parts[0].lower()
+            return ''.join(parts)
+        else:
+            return ''
 
     def get_published_status(self, document):
         published_status = 'Not Published'
@@ -449,7 +452,13 @@ class DjangoToOpenKm(SyncDocument):
         # create a new data instance (contains a document instance and properties
         data = document_client.create_document_data_object()
         filename = self._get_file_name(document)
-        data.document.path = '%s%s' % (settings.OPENKM['configuration']['UploadRoot'], filename)
+        base_path = settings.OPENKM['configuration']['UploadRoot']
+
+        if taxonomy:
+            # create the taxonomy here
+            pass
+
+        data.document.path = '%s%s' % (base_path, filename)
 
         # populate the document with keywords and categories
         data.document.keywords = document.tags.split(',')
@@ -458,16 +467,11 @@ class DjangoToOpenKm(SyncDocument):
         categories = self.get_categories(document, openkm_folderlist_class)
         data.document.categories = [document_client.create_category_folder_object(c.okm_path) for c in categories]
 
-        # initialise list nodes
-        data.document.notes = []
-        data.document.subscriptors = []
-
         # populate data and attach property groups
-        data.properties = []
         sync_properties = SyncProperties()
         data.properties = sync_properties.django_to_openkm_improved(document)
 
-        logging.debug(data)
+        logger.debug(data)
 
         # go go go!
         if not document.okm_uuid:
@@ -476,8 +480,10 @@ class DjangoToOpenKm(SyncDocument):
             okm_document = document_client.create_document(content, data)
         else:
             okm_document = document_client.update_document(data)
-        document.set_model_fields(okm_document)
-        document.save()
+
+        if okm_document:
+            document.set_model_fields(okm_document)
+            document.save()
 
     def _get_file_name(self, document):
         return document.file.name.split('/')[-1:][0]
@@ -501,7 +507,7 @@ class DjangoToOpenKm(SyncDocument):
             self.categories(document, folderlist_document_class)
             self.properties(document)
         except Exception, e:
-            print e
+            logger.exception(e)
 
     def update_properties(self, document, document_class):
         """
@@ -601,37 +607,6 @@ class DjangoToOpenKm(SyncDocument):
             for category_uuid in category_uuids:
                 logger.info("Adding category [%s] to %s" % (category_uuid, document.okm_path))
                 self.category.add_to_node(document.okm_path, category_uuid)
-
-
-    def get_category_uuids(self, document, openkm_folderlist_class):
-        """
-        *** TEMPORARY COPY PASTA HORRIBLENESS ***
-        Using the MODEL_CATEGORY_MAP gets all the associated objects for each m2m relationship and adds
-        them as categories to the given document on OpenKM
-        :param document_class: a class object.  This should be your Django model which extends the OpenKmDocument
-        abstract base class
-        """
-        category_uuids = []
-
-        for related_model_class in settings.OPENKM['categories'].keys():
-
-            # prepare the lists of AND and OR predicates for the query
-            and_predicates = ['categories', related_model_class.__name__]
-            fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
-            or_predicates = [field.__unicode__() for field in fields]
-
-            # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
-
-            logging.info("and_predicates: %s", and_predicates)
-            logging.info("or_predicates: %s", or_predicates)
-
-            # get the category UUIDs
-            category_uuids.extend(openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates))
-            logging.info("category_uuids: %s", category_uuids)
-
-        return category_uuids
-
-
 
 
     def properties(self, document):
