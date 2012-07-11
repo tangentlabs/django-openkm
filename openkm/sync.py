@@ -6,7 +6,7 @@ from django.db import transaction
 
 from suds import WebFault
 
-import client, facades, utils
+import client, facades, utils, sync
 
 
 class SyncKeywords(object):
@@ -239,7 +239,6 @@ class SyncProperties(object):
 
         if document_property_groups:
             for property_group in document_property_groups[0]:
-                print 'property_group: ', property_group
                 if hasattr(property_group, 'name') and property_group.name != 'okg:gsaProperties':
                     document_properties = self.property.get_document_properties_for_group(document.okm_path, property_group.name)
                     try:
@@ -256,14 +255,11 @@ class SyncProperties(object):
                     meta = property_map.get(document_property.name, None)
                     if 'choices' in meta:
                         option = self.get_option(document_property.options)
-                        print 'option: ', option
                         if option and meta['choices']:
                             value = utils.find_key(dict(meta['choices']), option.label)
-                            print 'meta[\'attribute\'], value', meta['attribute'], value
                             setattr(document, meta['attribute'], value)
                         elif option and not meta['choices']:
                             if meta['attribute'] == 'type':
-                                print 'name', option.value
                                 setattr(document.type, 'name', option.value)
                             else:
                                 # sorry this is a horrible special case
@@ -282,7 +278,6 @@ class SyncProperties(object):
     def set_language(self, document, option):
         language_model_class = document.get_related_model()
         document.language = language_model_class.objects.get(language=option.value)
-        print 'Document language updated to: ', document.language
 
     def get_option(self, options):
         for option in options:
@@ -407,53 +402,6 @@ class SyncDocument(object):
 
 class DjangoToOpenKm(SyncDocument):
 
-    def improved_execute(self, document, openkm_folderlist_class, taxonomy=False):
-        """
-        Uploads a document in a single web service call.
-        Important -- This relies on a modified OpenKM instance, use
-        execute() if you are using standard OpenKM
-        """
-        document_client = client.Document()
-
-        # create a new data instance (contains a document instance and properties
-        data = document_client.create_document_data_object()
-        filename = self._get_file_name(document)
-        base_path = settings.OPENKM['configuration']['UploadRoot']
-
-        if taxonomy:
-            # create the taxonomy here
-            pass
-
-        data.document.path = '%s%s' % (base_path, filename)
-
-        # populate the document with keywords and categories
-        data.document.keywords = document.tags.split(',')
-
-        # populate categories
-        categories = self.get_categories(document, openkm_folderlist_class)
-        data.document.categories = [document_client.create_category_folder_object(c.okm_path) for c in categories]
-
-        # populate data and attach property groups
-        sync_properties = SyncProperties()
-        data.properties = sync_properties.django_to_openkm_improved(document)
-
-        logger.debug(data)
-
-        # go go go!
-        if not document.okm_uuid:
-            document_manager = facades.DocumentManager()
-            content = document_manager.convert_file_content_to_binary_for_transport(document.file)
-            okm_document = document_client.create_document(content, data)
-        else:
-            okm_document = document_client.update_document(data)
-
-        if okm_document:
-            document.set_model_fields(okm_document)
-            document.save()
-
-    def _get_file_name(self, document):
-        return document.file.name.split('/')[-1:][0]
-
     def execute(self, document, folderlist_document_class, taxonomy=False):
         """
         Uploads a document to OpenKm
@@ -474,6 +422,14 @@ class DjangoToOpenKm(SyncDocument):
             self.properties(document)
         except Exception, e:
             logger.exception(e)
+
+    def improved_execute(self, document, openkm_folderlist_class, taxonomy=False):
+        CustomDjangoToOpenKM(asset=document).execute(openkm_folderlist_class, taxonomy=False)
+
+    def _get_file_name(self, document):
+        if not document.file:
+            raise Exception('File is empty')
+        return document.file.name.split('/')[-1:][0]
 
     def update_properties(self, document, document_class):
         """
@@ -596,6 +552,66 @@ class DjangoToOpenKm(SyncDocument):
             return False
 
 
+class CustomDjangoToOpenKM(DjangoToOpenKm):
+    """
+    Calls methods from a customised non-standard version of OpenKM
+    DO NOT USE these methods if you are using a standard OpenKM instance
+    """
+    def __init__(self, asset=None, *args, **kwargs):
+        self.asset = asset
+        self.document_client = client.Document()
+        super(CustomDjangoToOpenKM, self).__init__(*args, **kwargs)
+
+    def get_data(self):
+        return self.document_client.create_document_data_object()
+
+    def build_path(self, taxonomy=None):
+        filename = self._get_file_name(self.asset)
+        base_path = settings.OPENKM['configuration']['UploadRoot']
+        if taxonomy:
+            taxonomy = self.build_taxonomy(self.asset)
+        return '%s%s' % (base_path, filename)
+
+    def add_categories(self, openkm_folderlist_class):
+        categories = []
+        categories = self.get_categories(self.asset, openkm_folderlist_class)
+        if self.asset.is_linked_asset():
+            source_path = self.asset.get_dms_source_path()
+            categories += openkm_folderlist_class.objects.filter(okm_path=source_path)
+        return [self.document_client.create_category_folder_object(c.okm_path) for c in categories]
+
+    def add_properties(self):
+        sync_properties = SyncProperties()
+        return sync_properties.django_to_openkm_improved(self.asset)
+
+    def create(self, data):
+        content = facades.DocumentManager().convert_file_content_to_binary_for_transport(self.asset.file)
+        okm_document = self.document_client.create_document(content, data)
+        return okm_document
+
+    def update(self, data):
+        return self.document_client.update_document(data)
+
+    def get_or_create(self, data):
+        okm_document = self.update(data) if self.asset.okm_uuid else self.create(data)
+        if okm_document:
+            self.asset.set_model_fields(okm_document)
+            self.asset.save()
+
+    def execute(self, folderlist_document_class, taxonomy=False):
+        """
+        Uploads a document in a single web service call.
+        Important -- This relies on a modified OpenKM instance, use
+        execute() if you are using standard OpenKM
+        """
+        data = self.get_data()
+        data.document.path = self.build_path()
+        data.document.keywords = self.asset.tags.split(',')
+        data.document.categories = self.add_categories(folderlist_document_class)
+        data.properties = self.add_properties()
+        self.get_or_create(data)
+
+
 class OpenKmToDjango(SyncDocument):
 
     @transaction.commit_on_success
@@ -658,7 +674,6 @@ class OpenKmToDjango(SyncDocument):
 
                     # get the objects and add them to the model
                     objects = [related_class.objects.get(name__contains=value) for value in values]
-                    print('Adding the following categories: %s', objects)
                     [_set.add(object) for object in objects]
                 except AttributeError, e:
                     print e
