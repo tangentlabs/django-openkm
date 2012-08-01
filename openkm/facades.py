@@ -406,41 +406,28 @@ class Taxonomy(object):
 
         return dependencies
 
-    def build_path(self, dependencies):
+    def build_path(self, dependencies, root_path=settings.OPENKM['configuration']['UploadRoot']):
         """
-        :param dependencies: list. a list of folder paths which must exist.  If the folders do not
-        exist, they will be created
-        :returns boolean: True when path has been created
+        Check if root folder exists, then dependencies in order. If they don't exist then they are 
+        created
+        :param dependencies: (list of strings)
+        :param root_path: (string)
         """
-        import ipdb; ipdb.set_trace()
-        if self.repository.has_node(dependencies[0]):
-            return True
+        folder = client.Folder()
+        repository = client.Repository()
 
-        folders_to_create = [dependency for dependency in dependencies if not self.repository.has_node(dependency)]
-        folders_to_create.reverse()
+        current_path = ''
+        paths = [self._remove_trailing_slash(root_path)] + dependencies
 
-        for path in folders_to_create:
-            okm_folder = self.folder.new()
-            okm_folder.path = path
-            self.folder.create(okm_folder)
-            logging.info('Created folder path: %s', path)
+        for path in paths:
+            current_path = path if not current_path else (current_path + '/' + path)
+            if not repository.has_node(current_path):
+                folder_obj = folder.new()
+                folder_obj.path = current_path
+                folder.create(folder_obj)
 
-    # def build_path(self, root_path, dependencies):
-    #     """
-    #     Check if root folder exists, then dependencies in order. If they don't exist they are 
-    #     created
-    #     :param root_path
-    #     :param dependencies
-    #     """
-    #     folder = client.Folder()
-    #     repository = client.Repository()
+    def _remove_trailing_slash(self, string):
+        return string[:-1] if string[-1:] == '/' else string
 
-    #     for path 
-    #     path = root_path + '/'.join(dependencies)
-
-    #     if not repository.has_node(path):
-    #         folder_obj = folder.new()
-    #         folder_obj.path = root_path + subfolder
-    #         folder.create(folder_obj)
 
 
