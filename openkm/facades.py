@@ -412,6 +412,7 @@ class Taxonomy(object):
         exist, they will be created
         :returns boolean: True when path has been created
         """
+        import ipdb; ipdb.set_trace()
         if self.repository.has_node(dependencies[0]):
             return True
 
@@ -423,3 +424,23 @@ class Taxonomy(object):
             okm_folder.path = path
             self.folder.create(okm_folder)
             logging.info('Created folder path: %s', path)
+
+    # def build_path(self, root_path, dependencies):
+    #     """
+    #     Check if root folder exists, then dependencies in order. If they don't exist they are 
+    #     created
+    #     :param root_path
+    #     :param dependencies
+    #     """
+    #     folder = client.Folder()
+    #     repository = client.Repository()
+
+    #     for path 
+    #     path = root_path + '/'.join(dependencies)
+
+    #     if not repository.has_node(path):
+    #         folder_obj = folder.new()
+    #         folder_obj.path = root_path + subfolder
+    #         folder.create(folder_obj)
+
+

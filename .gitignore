@@ -1,5 +1,4 @@
 *.pyc
-views.py
 
 fixtures
 migrations

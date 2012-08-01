@@ -557,7 +557,10 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
     Calls methods from a customised non-standard version of OpenKM
     DO NOT USE these methods if you are using a standard OpenKM instance
     """
-    def __init__(self, asset=None, *args, **kwargs):
+    def __init__(self, asset, *args, **kwargs):
+        """
+        :param asset: Django model object instance that inherits from OpenKMDocument
+        """
         self.asset = asset
         self.document_client = client.Document()
         super(CustomDjangoToOpenKM, self).__init__(*args, **kwargs)
@@ -566,11 +569,23 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
         return self.document_client.create_document_data_object()
 
     def build_path(self, taxonomy=None):
+        """Returns a string of the path for the given asset"""
         filename = self._get_file_name(self.asset)
         base_path = settings.OPENKM['configuration']['UploadRoot']
         if taxonomy:
-            taxonomy = self.build_taxonomy(self.asset)
+            base_path += self._get_taxonomy(taxonomy)
+        return self._get_path(base_path, filename)
+
+    def _get_path(self, base_path, filename):
         return '%s%s' % (base_path, filename)
+
+    def _get_taxonomy(self, taxonomy):
+        """This simple builds the path string.  To Dynamically build the folder on OpenKM then
+        see openkm.facades.Taxonomy
+        :param taxonomy: a list of strings eg. ['one', 'two'] returns 'one/two/'
+        """
+        return '/'.join(taxonomy) + '/'
+
 
     def add_categories(self, openkm_folderlist_class):
         categories = []
@@ -598,14 +613,15 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
             self.asset.set_model_fields(okm_document)
             self.asset.save()
 
-    def execute(self, folderlist_document_class, taxonomy=False):
+    def execute(self, folderlist_document_class, taxonomy=None):
         """
         Uploads a document in a single web service call.
         Important -- This relies on a modified OpenKM instance, use
         execute() if you are using standard OpenKM
         """
         data = self.get_data()
-        data.document.path = self.build_path()
+        data.document.path = self.build_path(taxonomy=taxonomy)
+        print data.document.path
         data.document.keywords = self.asset.tags.split(',')
         data.document.categories = self.add_categories(folderlist_document_class)
         data.properties = self.add_properties()
@@ -614,7 +630,6 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
 
 class OpenKmToDjango(SyncDocument):
 
-    @transaction.commit_on_success
     def execute(self, document, okm_document):
         '''
         :param document: A Django model object instance of your Document object

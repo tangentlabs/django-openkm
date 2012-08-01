@@ -1,4 +1,4 @@
-Fimport datetime
+import datetime
 
 from django.test import TestCase
 from django.conf import settings
