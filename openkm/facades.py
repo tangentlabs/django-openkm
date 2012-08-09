@@ -409,9 +409,9 @@ class Taxonomy(object):
     def build_path(self, dependencies, root_path=settings.OPENKM['configuration']['UploadRoot']):
         """
         Check if root folder exists, then dependencies in order. If they don't exist then they are 
-        created
-        :param dependencies: (list of strings)
-        :param root_path: (string)
+        created.  
+        :param dependencies: (list of strings) eg. ['sports', 'football']
+        :param root_path: (string - optional) eg. '/okm:root/' 
         """
         folder = client.Folder()
         repository = client.Repository()

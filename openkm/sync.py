@@ -688,8 +688,8 @@ class OpenKmToDjango(SyncDocument):
                         values = [self.sanitize_task_description(value) for value in values]
 
                     # get the objects and add them to the model
-                    objects = [related_class.objects.get(name__contains=value) for value in values]
-                    [_set.add(object) for object in objects]
+                    objects = [related_class.objects.get(name=value) for value in values]
+                    [_set.add(obj) for obj in objects]
                 except AttributeError, e:
                     print e
                     logger.exception(e)
@@ -711,6 +711,10 @@ class OpenKmToDjango(SyncDocument):
         :param category_bin: dict
         :return dict
         """
+        # oh god this is horrible, please forgive me
+        if category_name == 'Industry':
+            category_name = 'Industries'
+
         related_class = utils.find_key(settings.OPENKM['categories'], category_name) # get the related class to document
 
         if not related_class:
