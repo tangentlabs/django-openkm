@@ -177,6 +177,9 @@ class SyncProperties(object):
         map['okg:customProperties']['okp:customProperties.title'] = [document.name]
         map['okg:customProperties']['okp:customProperties.description'] = [document.description]
         map['okg:customProperties']['okp:customProperties.languages'] = [self.get_language(document)]
+        map['okg:customProperties']['okp:customProperties.contentOwner'] = [self.get_content_owner(document)]
+        map['okg:customProperties']['okp:customProperties.expirationDate'] = [document.okm_date_string(document.expire)]
+        map['okg:customProperties']['okp:customProperties.public'] = [self.is_public(document)]
 
         map['okg:salesProperties']['okp:salesProperties.assetType'] = [self.get_asset_type(document)]
 
@@ -184,6 +187,9 @@ class SyncProperties(object):
         map['okg:gsaProperties']['okp:gsaProperties.startDate'] = [document.okm_date_string(document.publish)]
         map['okg:gsaProperties']['okp:gsaProperties.expirationDate'] = [document.okm_date_string(document.expire)]
         return map
+
+    def is_public(self, document):
+        return 'True' if document.is_public else 'False'
 
     def get_language(self, document):
         if not hasattr(document, 'language') or not hasattr(document.language, 'language') or document.language.language in ('ro', 'hr') or not document.language:
@@ -198,6 +204,10 @@ class SyncProperties(object):
             return ''.join(parts)
         else:
             return ''
+
+    def get_content_owner(self, document):
+        #return document.owner.username if document.owner else 'Not set'
+        return 'okmAdmin'
 
     def get_published_status(self, document):
         published_status = 'Not Published'
@@ -260,7 +270,10 @@ class SyncProperties(object):
                             setattr(document, meta['attribute'], value)
                         elif option and not meta['choices']:
                             if meta['attribute'] == 'type':
-                                setattr(document.type, 'name', option.value)
+                                if not hasattr(document, 'type') or not document.type:
+                                    document.set_default_type()
+                                document.set_type(option.label)
+                                document.save()
                             else:
                                 # sorry this is a horrible special case
                                 # will come back and refactor this out soon
@@ -364,7 +377,7 @@ class SyncFolderList(object):
                         cl.okm_author = folder.author
                         cl.okm_created = folder.created
                         cl.okm_has_childs = folder.hasChilds
-                        cl.okm_path = folder.path
+                        cl.okm_path = utils.strip_runs_of_whitespace(folder.path) 
                         cl.okm_permissions = folder.permissions
                         cl.okm_subscribed = folder.subscribed
                         cl.save()
@@ -486,11 +499,7 @@ class DjangoToOpenKm(SyncDocument):
             and_predicates = ['categories', mapped_category_name]
             fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
             or_predicates = [field.__unicode__() for field in fields]
-
-            # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
-
-            # get the category UUIDs
-            category_uuids += openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
+			category_uuids += openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
         return category_uuids
 
     def get_categories(self, document, openkm_folderlist_class):
@@ -500,20 +509,26 @@ class DjangoToOpenKm(SyncDocument):
         """
         categories = []
         for related_model_class in settings.OPENKM['categories'].keys():
-            # prepare the lists of AND and OR predicates for the query
             mapped_category_name = self.category_map(related_model_class.__name__)
             if not mapped_category_name:
                 print 'Category not found'
                 continue
             and_predicates = ['categories', mapped_category_name]
             fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
-            or_predicates = [field.__unicode__() for field in fields]
-
-            # @todo convert '/' chars to '--' in and_predicates and or_predicate lists
-
-            # get the category UUIDs
+            or_predicates = [self._normalise_string(field.__unicode__()) for field in fields]
             categories += openkm_folderlist_class.objects.get_custom_queryset(and_predicates, or_predicates)
         return categories
+
+    def _normalise_string(self, _str):
+        """
+        Replace/remove chars to match those accepted by OpenKM
+        """
+        _str = _str.replace('/', '--') 
+        _str = _str.replace("'", ' ') # apostrophes to spaces
+        disallowed_chars = ('[', ']', ':')
+        for char in disallowed_chars:
+            _str = _str.replace(char, '')
+        return _str
 
     def categories(self, document, openkm_folderlist_class, update_individually=True):
         """
@@ -621,7 +636,6 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
         """
         data = self.get_data()
         data.document.path = self.build_path(taxonomy=taxonomy)
-        print data.document.path
         data.document.keywords = self.asset.tags.split(',')
         data.document.categories = self.add_categories(folderlist_document_class)
         data.properties = self.add_properties()
@@ -645,8 +659,8 @@ class OpenKmToDjango(SyncDocument):
         :param okm_document: an OpenKM Document instance
         '''
         if hasattr(okm_document, 'keywords') and okm_document.keywords:
-            print 'DMS Keywords: %s' % okm_document.keywords
-            keywords = utils.remove_none_elements_from_list(okm_document.keywords)
+            formatted_keywords = [unicode(keyword) for keyword in okm_document.keywords]
+            keywords = utils.remove_none_elements_from_list(formatted_keywords)
             document.tags = ', '.join(keywords)
         else:
             document.tags = ''
@@ -711,9 +725,10 @@ class OpenKmToDjango(SyncDocument):
         :param category_bin: dict
         :return dict
         """
-        # oh god this is horrible, please forgive me
-        if category_name == 'Industry':
-            category_name = 'Industries'
+        if category_name == 'Industry': category_name = 'Industries'
+        elif category_name == 'Role': category_name = 'Roles'
+        elif category_name == 'Task': category_name = 'Tasks'
+        elif category_name == 'Solution': category_name = 'Solutions'
 
         related_class = utils.find_key(settings.OPENKM['categories'], category_name) # get the related class to document
 

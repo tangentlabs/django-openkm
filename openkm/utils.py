@@ -80,4 +80,12 @@ def remove_trailing_slash(str):
 def remove_none_elements_from_list(list):
     return [e for e in list if e != None]
 
+def strip_runs_of_whitespace(_str):
+    """
+    Give a string containing words split by more than a single
+    whitespace, all whitespace is trimmed to a single char
+    e.g. 'Lots   of white     space' -> 'Lots of white space'
+    """
+    return ' '.join(_str.split())
+
 
