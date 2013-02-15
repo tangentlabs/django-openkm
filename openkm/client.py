@@ -1,4 +1,6 @@
-import sys, logging
+import sys
+import logging
+import datetime
 from functools import wraps
 
 from django.conf import settings
@@ -8,6 +10,7 @@ from suds.client import Client
 
 import exceptions
 
+from openkm.services import OpenKMAuditService
 logging.getLogger('suds.client').setLevel(logging.INFO)
 
 PATH = settings.OPENKM['configuration']['Path']
@@ -40,9 +43,6 @@ def try_except(fn):
             raise exception, exception(e), tb
     return wraps(fn)(wrapped)
 
-def get_service(class_name):
-    return Client(OPENKM_WSDLS[class_name]).service
-
 def get_client(class_name):
     return Client(OPENKM_WSDLS[class_name])
 
@@ -54,13 +54,13 @@ def get_token():
 
 class BaseService(object):
 
-    def __init__(self, start_session=True, class_name=None):
+    def __init__(self, start_session=True, class_name=None, log_events=True):
         if not class_name:
             class_name = self.__class__.__name__
-        self.service = get_service(class_name)
         self.client = get_client(class_name)
-        if start_session:
-            self.token = get_token()
+        self.service = self.client.service
+        self.token = get_token() if start_session else None
+        self.log_events = log_events if log_events else None
 
 
 class Auth(BaseService):
@@ -155,7 +155,6 @@ class Document(BaseService):
         """
         return self.service.rename(token=self.token, docPath=doc_path, newName=new_name)
 
-
     def move(self, doc_path, new_name):
         """
         Move a document to another location in the repository.
@@ -164,7 +163,6 @@ class Document(BaseService):
         :return none
         """
         return self.service.move(token=self.token, docPath=doc_path, newName=new_name)
-
 
     def get_properties(self, doc_path):
         """
@@ -184,21 +182,33 @@ class Document(BaseService):
         return self.service.setProperties(token=self.token, doc=doc)
 
 
-    def set_content(self, doc_path, content):
+    def set_content(self, doc_path, content, comment=None):
         """
         Set document content in the repository.
         :param doc_path string
         :param content byte array (Java)
+        :param comment string
         :return none
+
         """
-        return self.service.setContent(token=self.token, docPath=doc_path, content=content)
+        if not comment:
+            comment = "No comment"
+        return self.service.setContent(token=self.token, docPath=doc_path, content=content, comment=comment)
 
 
-    def get_content(self, doc_path, checkout):
+    def get_content(self, doc_path, checkout=False):
         """Obtain document content from the repository.
         :param doc_path string
         :param checkout boolean
         """
+        return self.service.getContent(token=self.token, docPath=doc_path, checkout=checkout)
+
+    def get_content_by_uuid(self, uuid, checkout=False):
+        """Obtain document content from the repository.
+        :param doc_path string
+        :param checkout boolean
+        """
+        doc_path = self.get_path(uuid)
         return self.service.getContent(token=self.token, docPath=doc_path, checkout=checkout)
 
 
@@ -228,14 +238,19 @@ class Document(BaseService):
         """
         return self.service.cancelCheckout(token=self.token, docPath=doc_path)
 
+    def force_cancel_checkout(self, doc_path):
+        return self.service.forceCancelCheckout(token=self.token, docPath=doc_path)
 
-    def checkin(self, doc_path):
+    def force_unlock(self, doc_path):
+        return self.service.forceUnlock(token=self.token, docPath=doc_path)
+
+    def checkin(self, doc_path, comment='Document update'):
         """
         Check in the document to create a new version.
         :param doc_path string
         :return A version object with the properties of the new generated version.
         """
-        return self.service.checkin(token=self.token, docPath=doc_path)
+        return self.service.checkin(token=self.token, docPath=doc_path, comment=comment)
 
 
     def get_version_history(self, doc_path):
@@ -307,8 +322,9 @@ class Document(BaseService):
         """
         if not hasattr(self.service, 'createDocument'):
             raise AttributeError('createDocument is not available on your instance of OpenKM')
+        if self.log_events:
+            OpenKMAuditService().record_update(self.token, content, occured=datetime.datetime.now())
         return self.service.createDocument(token=self.token, content=content, data=data)
-
 
     def update_document(self, data):
         """
@@ -318,7 +334,20 @@ class Document(BaseService):
         """
         if not hasattr(self.service, 'updateDocument'):
             raise AttributeError('updateDocument is not available on your instance of OpenKM')
+        if self.log_events:
+            OpenKMAuditService().record_create(self.token, data, occured=datetime.datetime.now())
         return self.service.updateDocument(token=self.token, data=data)
+
+    def preview_document(self, uuid, format, version=None):
+        """
+        Custom web service to get PDF preview of document given a uuid, format and version
+        """
+        if not hasattr(self.service, 'previewDocument'):
+            raise AttributeError('previewDocument is not available on your instance of OpenKM')
+        return self.service.previewDocument(token=self.token, uuid=uuid, format=format, version=version)
+
+    def get_categories(self):
+        return self.service.getCategories(token=self.token)
 
 
 class Search(BaseService):

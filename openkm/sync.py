@@ -1,5 +1,7 @@
 import logging
+import re
 logger = logging.getLogger( __name__ )
+
 
 from django.conf import settings
 from django.db import transaction
@@ -138,10 +140,12 @@ class SyncCategories(object):
         Accepts a Document and a single class object of a many-to-many field
         :returns queryset the related model objects associated with the given document
         """
-        method_name = '%s' % related_model_class.__name__.lower()
-        _set = getattr(document, method_name)
-
-        return _set.all()
+        try:
+            method_name = '%s' % related_model_class.__name__.lower()
+            _set = getattr(document, method_name)
+            return _set.all()
+        except Exception, e:
+            logger.debug(e)
 
     def get_related_objects_from_model(self, document, related_model_name):
         """
@@ -174,18 +178,22 @@ class SyncProperties(object):
         :param document: Django model object instance
         :returns dict
         """
-        map['okg:customProperties']['okp:customProperties.title'] = [document.name]
-        map['okg:customProperties']['okp:customProperties.description'] = [document.description]
-        map['okg:customProperties']['okp:customProperties.languages'] = [self.get_language(document)]
-        map['okg:customProperties']['okp:customProperties.contentOwner'] = [self.get_content_owner(document)]
+        map['okg:customProperties']['okp:customProperties.title'] = [xml_clean(document.name)]
+        map['okg:customProperties']['okp:customProperties.description'] = [xml_clean(document.description)]
+        map['okg:customProperties']['okp:customProperties.languages'] = [xml_clean(self.get_language(document))]
+        map['okg:customProperties']['okp:customProperties.contentOwner'] = [xml_clean(self.get_content_owner(document))]
         map['okg:customProperties']['okp:customProperties.expirationDate'] = [document.okm_date_string(document.expire)]
         map['okg:customProperties']['okp:customProperties.public'] = [self.is_public(document)]
 
-        map['okg:salesProperties']['okp:salesProperties.assetType'] = [self.get_asset_type(document)]
+        map['okg:salesProperties']['okp:salesProperties.assetType'] = [xml_clean(self.get_asset_type(document))]
 
+        # These will only exist if the user has the correct permissions to add them to the document in the first place
+        map['okg:gsaProperties']['okp:gsaProperties.publisherNotes'] = [document.notes]
+        map['okg:gsaProperties']['okp:gsaProperties.publishNow'] = [document.publish_now]
         map['okg:gsaProperties']['okp:gsaProperties.gsaPublishedStatus'] = [self.get_published_status(document)]
         map['okg:gsaProperties']['okp:gsaProperties.startDate'] = [document.okm_date_string(document.publish)]
         map['okg:gsaProperties']['okp:gsaProperties.expirationDate'] = [document.okm_date_string(document.expire)]
+
         return map
 
     def is_public(self, document):
@@ -199,9 +207,17 @@ class SyncProperties(object):
 
     def get_asset_type(self, document):
         if document.type:
-            parts = document.type.name.split()
-            parts[0] = parts[0].lower()
-            return ''.join(parts)
+            parts = document.type.name.lower().replace('&', '').split()
+            stripped_parts = [part.strip() for part in parts]
+            i = 1
+            
+            for i, word in enumerate(stripped_parts):
+                if i > 0:
+                    stripped_parts[i] = word.capitalize()
+
+            asset_type = ''.join(stripped_parts)
+            logger.debug('Asset type: %s' % asset_type)
+            return asset_type
         else:
             return ''
 
@@ -239,6 +255,7 @@ class SyncProperties(object):
         return property_groups
 
     def django_to_openkm_improved(self, document):
+        #import ipdb; ipdb.set_trace()
         map = settings.OPENKM['properties']
         properties_dict = self.prepare_properties_dict(map, document)
         return self.populate_property_group(properties_dict)
@@ -341,17 +358,28 @@ class SyncFolderList(object):
         self.dir = facades.DirectoryListing()
         self.repository = client.Repository()
 
-    def execute(self, klass):
+    def update_categories(self, klass):
         """
         :param klass: OpenKMFolderlist class object
         """
         klass.objects.all().delete()
-        xpath_query = '/jcr:root/okm:categories//element(*)'
-        search = facades.SearchManager()
-        type = 'xpath'
-        folders = search.by_statement(xpath_query, type)
-        print('%s folders returned for query: %s' % (len(folders.item), xpath_query))
-        self.save(folders, klass)
+        document = client.Document()
+        categories = document.get_categories()
+        
+        for folder in categories:
+            try:
+                folder_obj = klass.objects.create(okm_uuid=folder.uuid)
+                folder_obj.okm_author = folder.author
+                #folder_obj.okm_created = folder.created
+                folder_obj.okm_has_childs = folder.hasChildren
+                folder_obj.okm_path = utils.strip_runs_of_whitespace(folder.path)
+                folder_obj.okm_permissions = folder.permissions
+                folder_obj.okm_subscribed = folder.subscribed
+                folder_obj.save()
+            except Exception, e:
+                logger.exception(e)
+
+        print('%s folders returned from DMS' % len(categories))
         print('%s folders now in local folder list' % klass.objects.count())
 
     def get_list_of_root_paths(self):
@@ -375,16 +403,16 @@ class SyncFolderList(object):
                     try:
                         cl = klass.objects.create(okm_uuid=folder.uuid)
                         cl.okm_author = folder.author
-                        cl.okm_created = folder.created
-                        cl.okm_has_childs = folder.hasChilds
-                        cl.okm_path = utils.strip_runs_of_whitespace(folder.path) 
+                        # cl.okm_created = folder.created
+                        cl.okm_has_childs = folder.hasChildren
+                        cl.okm_path = utils.strip_runs_of_whitespace(folder.path)
                         cl.okm_permissions = folder.permissions
                         cl.okm_subscribed = folder.subscribed
                         cl.save()
                     except UnicodeEncodeError, e:
-                        logging.exception(e)
+                        logging.debug(e)
                     except Exception, e:
-                        logging.exception(e)
+                        logging.debug(e)
                 elif hasattr(folder, 'document'):
                     logging.error('This is a document, not a folder')
 
@@ -434,7 +462,7 @@ class DjangoToOpenKm(SyncDocument):
             self.categories(document, folderlist_document_class)
             self.properties(document)
         except Exception, e:
-            logger.exception(e)
+            logger.debug(e)
 
     def improved_execute(self, document, openkm_folderlist_class, taxonomy=False):
         CustomDjangoToOpenKM(asset=document).execute(openkm_folderlist_class, taxonomy=False)
@@ -499,7 +527,7 @@ class DjangoToOpenKm(SyncDocument):
             and_predicates = ['categories', mapped_category_name]
             fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
             or_predicates = [field.__unicode__() for field in fields]
-			category_uuids += openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
+            category_uuids += openkm_folderlist_class.objects.custom_path_query(and_predicates, or_predicates)
         return category_uuids
 
     def get_categories(self, document, openkm_folderlist_class):
@@ -509,21 +537,26 @@ class DjangoToOpenKm(SyncDocument):
         """
         categories = []
         for related_model_class in settings.OPENKM['categories'].keys():
-            mapped_category_name = self.category_map(related_model_class.__name__)
-            if not mapped_category_name:
-                print 'Category not found'
-                continue
-            and_predicates = ['categories', mapped_category_name]
-            fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
-            or_predicates = [self._normalise_string(field.__unicode__()) for field in fields]
-            categories += openkm_folderlist_class.objects.get_custom_queryset(and_predicates, or_predicates)
+            try:
+                mapped_category_name = self.category_map(related_model_class.__name__)
+                if not mapped_category_name:
+                    print 'Category not found'
+                    continue
+                and_predicates = ['categories', mapped_category_name]
+                fields = self.sync_categories.get_objects_from_m2m_model(document, related_model_class)
+                or_predicates = [self._normalise_string(field.__unicode__()) for field in fields]
+                categories_temp = openkm_folderlist_class.objects.get_custom_queryset(and_predicates, or_predicates)
+                if not categories_temp:
+                    categories_temp = [] 
+                categories += categories_temp
+            except Exception, e:
+                logger.debug(e)
         return categories
 
     def _normalise_string(self, _str):
         """
         Replace/remove chars to match those accepted by OpenKM
         """
-        _str = _str.replace('/', '--') 
         _str = _str.replace("'", ' ') # apostrophes to spaces
         disallowed_chars = ('[', ']', ':')
         for char in disallowed_chars:
@@ -605,6 +638,7 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
     def add_categories(self, openkm_folderlist_class):
         categories = []
         categories = self.get_categories(self.asset, openkm_folderlist_class)
+
         if self.asset.is_linked_asset():
             source_path = self.asset.get_dms_source_path()
             categories += openkm_folderlist_class.objects.filter(okm_path=source_path)
@@ -615,12 +649,26 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
         return sync_properties.django_to_openkm_improved(self.asset)
 
     def create(self, data):
+        """
+        If this is a link, then create the link file and attach it to the asset object
+        """
         content = facades.DocumentManager().convert_file_content_to_binary_for_transport(self.asset.file)
         okm_document = self.document_client.create_document(content, data)
         return okm_document
 
     def update(self, data):
-        return self.document_client.update_document(data)
+        """
+        Updates an existing document: metadata and content
+        """
+        if self.asset.source != self.asset.CMI: # direct request from Will to not update CMI
+            doc_path = self.asset.okm_path
+            
+            try:
+                content = facades.DocumentManager().convert_file_content_to_binary_for_transport(self.asset.file)
+                self.document_client.set_content(doc_path=doc_path, content=content)
+                self.document_client.update_document(data)
+            except Exception, e:
+                logger.exception(e)
 
     def get_or_create(self, data):
         okm_document = self.update(data) if self.asset.okm_uuid else self.create(data)
@@ -635,11 +683,17 @@ class CustomDjangoToOpenKM(DjangoToOpenKm):
         execute() if you are using standard OpenKM
         """
         data = self.get_data()
-        data.document.path = self.build_path(taxonomy=taxonomy)
-        data.document.keywords = self.asset.tags.split(',')
+        data.document.path = self.asset.okm_path if self.asset.okm_path else self.build_path(taxonomy=taxonomy)
+        data.document.keywords = [xml_clean(tag) for tag in self.asset.tags.split(',')]
         data.document.categories = self.add_categories(folderlist_document_class)
         data.properties = self.add_properties()
         self.get_or_create(data)
+
+    def fetch_preview(self, format, version=None):
+        '''
+        Completely custom method for fetching documents for preview.
+        '''
+        return self.document_client.preview_document(self.asset.okm_uuid, format, version)
 
 
 class OpenKmToDjango(SyncDocument):
@@ -687,7 +741,7 @@ class OpenKmToDjango(SyncDocument):
 
                     category_bin = self.add_category_to_dict(model_name, object_name, category_bin)
                 except ValueError, e:
-                    logger.exception(e)
+                    logger.debug(e)
 
             print 'Category bin: ', category_bin
 
@@ -706,10 +760,10 @@ class OpenKmToDjango(SyncDocument):
                     [_set.add(obj) for obj in objects]
                 except AttributeError, e:
                     print e
-                    logger.exception(e)
+                    logger.debug(e)
                 except Exception, e:
                     print e
-                    logger.exception(e)
+                    logger.debug(e)
 
 
     def sanitize_task_description(self, task):
@@ -733,7 +787,7 @@ class OpenKmToDjango(SyncDocument):
         related_class = utils.find_key(settings.OPENKM['categories'], category_name) # get the related class to document
 
         if not related_class:
-            logger.error('%s not found in OPENKM[\'categories\']', category_name)
+            logger.debug('%s not found in OPENKM[\'categories\']', category_name)
             return category_bin
 
         if related_class not in category_bin:
@@ -745,3 +799,11 @@ class OpenKmToDjango(SyncDocument):
     def properties(self, document):
         sync_properties = SyncProperties()
         sync_properties.openkm_to_django(document)
+
+
+def xml_clean(value):
+    # todo: re.sub != string.translate - fix this
+    if value is None:
+        value = ''
+    remove_re = re.compile(u'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]')
+    return remove_re.sub('', value)

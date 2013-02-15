@@ -320,7 +320,7 @@ class CategoryTest(TestCase):
 
     def test_get_category_root_object_structure(self):
         category_root = self.category.get_category_root()
-        attrs = ('author', 'created', 'hasChilds', 'path', 'permissions', 'subscribed', 'uuid')
+        attrs = ('author', 'created', 'hasChildren', 'path', 'permissions', 'subscribed', 'uuid')
         for attr in attrs:
             self.assertTrue(hasattr(category_root, attr), msg="%s is not an attribute of the object returned \
             by category root" % attr)

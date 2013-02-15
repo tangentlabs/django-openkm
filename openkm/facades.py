@@ -325,15 +325,15 @@ class Property(object):
             return 'English'
 
     def update_options_list(self, options, new_value):
-       for option in options:
-           print option.label, '==', new_value
-           if (option.label == new_value) or (option.value == new_value):
-               option.selected = True
-               print('Updating option[%s].selected to True', option.label)
-           else:
-               option.selected = False
+        for option in options:
+            print option.label, '==', new_value
+            if (option.label == new_value) or (option.value == new_value):
+                option.selected = True
+                print('Updating option[%s].selected to True', option.label)
+            else:
+                option.selected = False
 
-       return options
+        return options
 
     def update_document_on_openkm(self, node_path, group_name, properties):
         self.property_group.remove_group(node_path, group_name)
@@ -408,10 +408,10 @@ class Taxonomy(object):
 
     def build_path(self, dependencies, root_path=settings.OPENKM['configuration']['UploadRoot']):
         """
-        Check if root folder exists, then dependencies in order. If they don't exist then they are 
-        created.  
+        Check if root folder exists, then dependencies in order. If they don't exist then they are
+        created.
         :param dependencies: (list of strings) eg. ['sports', 'football']
-        :param root_path: (string - optional) eg. '/okm:root/' 
+        :param root_path: (string - optional) eg. '/okm:root/'
         """
         folder = client.Folder()
         repository = client.Repository()
